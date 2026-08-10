@@ -4,6 +4,20 @@ Written 2026-08-10, the session that built the app (scoped earlier in the
 suite docs as "next products" §18; Phase 1 + Phase 2 shipped together, and
 the owner kept the PalsPayIn name over the rename recommendation).
 
+## 0. Phase 3 (added later the same day)
+
+Pay-them deep links (member `handles` in the ledger — codec **v2**, v1 links
+still decode via a pinned fixture test; only PayPal.me carries an amount,
+Monzo/Revolut are handle-only + clipboard, bank details are an honest copy;
+the post-link prompt records a claim, never a verification), monthly
+**nudge templates** (per-device, outside the event log on purpose — see
+`src/lib/recurring.ts`'s header for why; double-adds are caught by the
+duplicate-suspicion prompt), and **receipt photos** (IndexedDB store
+`photos`, downscaled ≤1600px, structurally unable to reach links/files/CSV/
+relay). The fourth Phase 3 item — Universal ID group-listing — was refused:
+capability links stored server-side would co-locate the AES keys with the
+relay ciphertext. 70 unit tests; deployed via the repo's CI.
+
 ## 1. What was proved live vs only compiled
 
 **Proved live (2026-08-10):**
