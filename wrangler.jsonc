@@ -1,0 +1,30 @@
+// Universal PalsPayIn — Cloudflare Worker: static assets + the encrypted
+// relay API (worker/relay.js) + a nightly TTL cron.
+//
+// A NEW Universal App starts on Workers static assets, not Pages (standing
+// policy, 2026-08-06). The portal Worker proxies
+// opensource.unisim.co.uk/palspayin/* here, so `run_worker_first` must catch
+// the API under both path shapes; everything else is served from ./dist.
+// `assets.directory` must NEVER be "." — that uploads .git/ to the edge.
+{
+  "name": "universal-palspayin",
+  // Hardcoded so CI tokens don't need "User Details: Read" (same as the portal).
+  "account_id": "12fb850ff7cd52f3ef0244b1837e3008",
+  "main": "worker/relay.js",
+  "compatibility_date": "2026-08-01",
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/palspayin/api/*"]
+  },
+  "triggers": { "crons": ["17 4 * * *"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "palspayin-relay",
+      "database_id": "d917b216-0ec0-46f2-a37d-ed6e2f8dc250"
+    }
+  ]
+}

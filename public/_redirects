@@ -1,0 +1,22 @@
+# The portal Worker proxies opensource.unisim.co.uk/palspayin/* to this
+# Worker with the /palspayin prefix intact, while the build output is flat.
+# All 200s — transparent rewrites, not redirects. (/palspayin/api/* never
+# gets here: run_worker_first sends it to worker/relay.js.)
+#
+# ⚠️ NO catch-all `/palspayin/* /index.html 200` rule — Workers static assets
+# rejects it as an infinite loop (the asset layer strips `.html` itself, the
+# same trap as the marketing site's /netzero). Unmatched paths fall through
+# to `not_found_handling: single-page-application`, which serves index.html
+# anyway.
+/palspayin/sw.js                /sw.js                200
+/palspayin/registerSW.js        /registerSW.js        200
+/palspayin/manifest.webmanifest /manifest.webmanifest 200
+/palspayin/workbox-*            /workbox-:splat       200
+/palspayin/assets/*             /assets/:splat        200
+/palspayin/favicon.svg          /favicon.svg          200
+/palspayin/unisim-icon.png      /unisim-icon.png      200
+/palspayin/icon-180.png         /icon-180.png         200
+/palspayin/icon-192.png         /icon-192.png         200
+/palspayin/icon-512.png         /icon-512.png         200
+/palspayin/robots.txt           /robots.txt           200
+/palspayin/sitemap.xml          /sitemap.xml          200
