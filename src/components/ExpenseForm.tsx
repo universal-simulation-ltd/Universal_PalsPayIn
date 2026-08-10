@@ -32,6 +32,7 @@ export default function ExpenseForm({
 }) {
   const addExpense = useGroupStore((s) => s.addExpense);
   const amendExpense = useGroupStore((s) => s.amendExpense);
+  const addRecurring = useGroupStore((s) => s.addRecurring);
 
   const [payer, setPayer] = useState<EventId>(editing?.payer ?? members[0]?.id ?? '');
   const [amount, setAmount] = useState(editing ? minorToText(editing.minor, editing.currency) : '');
@@ -48,6 +49,7 @@ export default function ExpenseForm({
   const [percents, setPercents] = useState<Record<EventId, string>>(() => initialPercents(editing));
   const [items, setItems] = useState<ItemDraft[]>(() => initialItems(editing));
   const [adjustments, setAdjustments] = useState<AdjDraft[]>(() => initialAdjs(editing));
+  const [repeatMonthly, setRepeatMonthly] = useState(false);
   const [showCharged, setShowCharged] = useState(Boolean(editing?.charged));
   const [chargedCurrency, setChargedCurrency] = useState(editing?.charged?.currency ?? 'GBP');
   const [chargedAmount, setChargedAmount] = useState(editing?.charged ? minorToText(editing.charged.minor, editing.charged.currency) : '');
@@ -134,6 +136,16 @@ export default function ExpenseForm({
     };
     if (editing) await amendExpense(editing.id, fields);
     else await addExpense(fields);
+    if (!editing && repeatMonthly) {
+      await addRecurring({
+        description: fields.description,
+        minor: fields.minor,
+        currency: fields.currency,
+        payer: fields.payer,
+        split: fields.split,
+        dayOfMonth: Math.min(28, Number(date.slice(8, 10)) || 1),
+      });
+    }
     onClose();
   };
 
@@ -288,6 +300,14 @@ export default function ExpenseForm({
           </div>
         )}
       </div>
+
+      {!editing && (
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input type="checkbox" checked={repeatMonthly} onChange={(e) => setRepeatMonthly(e.target.checked)} className="accent-orange-600" />
+          Repeat monthly on day {Math.min(28, Number(date.slice(8, 10)) || 1)} — this device will offer to add it each month, never
+          add it by itself
+        </label>
+      )}
 
       {problem && amount.trim() !== '' && description.trim() !== '' && (
         <p className="text-sm font-medium text-amber-700 dark:text-amber-400">{problem}</p>

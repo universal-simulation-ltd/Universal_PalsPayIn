@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import {
   eventTimestamp, findDuplicateSuspicions, mergeEvents, randomEventId, randomGroupId,
-  type DuplicateSuspicion, type EventId, type ExpenseEvent, type LedgerEvent, type MemberEvent, type PaymentEvent, type SplitSpec,
+  type DuplicateSuspicion, type EventId, type ExpenseEvent, type LedgerEvent, type MemberEvent, type MemberHandles, type PaymentEvent, type SplitSpec,
 } from '../lib/events';
 import { buildCompact, pruneCompacted } from '../lib/compact';
 import { decodeShareFragment, importJson, MEMBER_COLOURS } from '../lib/codec';
 import { deleteRelayGroup, generateRelayKey, parseCapabilityFragment, syncWithRelay } from '../lib/relay';
-import { deleteGroup as idbDeleteGroup, deviceId, loadGroups, saveGroup, type StoredGroup } from '../lib/store';
+import type { RecurringTemplate } from '../lib/recurring';
+import { deleteGroup as idbDeleteGroup, deletePhoto, deviceId, loadGroups, saveGroup, type StoredGroup } from '../lib/store';
 
 export interface PendingSuspicions {
   groupId: string;
@@ -29,13 +30,19 @@ interface GroupState {
   removeGroup: (groupId: string) => Promise<void>;
 
   addMember: (name: string) => Promise<void>;
-  amendMember: (memberId: EventId, body: { name: string; colour: string; handle?: string }) => Promise<void>;
+  amendMember: (memberId: EventId, body: { name: string; colour: string; handles?: MemberHandles }) => Promise<void>;
   addExpense: (fields: ExpenseFields) => Promise<void>;
   amendExpense: (originalId: EventId, fields: ExpenseFields) => Promise<void>;
   addPayment: (fields: PaymentFields) => Promise<void>;
   amendPayment: (originalId: EventId, fields: PaymentFields) => Promise<void>;
   voidEntry: (entryId: EventId) => Promise<void>;
   compactBefore: (cutoffDate: string) => Promise<number>;
+
+  addRecurring: (t: Omit<RecurringTemplate, 'id' | 'createdOn' | 'lastAdded'>) => Promise<void>;
+  removeRecurring: (templateId: string) => Promise<void>;
+  /** Materialise a due occurrence as an ordinary expense event (or skip it). */
+  addOccurrence: (templateId: string, dueDate: string) => Promise<void>;
+  skipOccurrence: (templateId: string, dueDate: string) => Promise<void>;
 
   importPayload: (payload: { groupId: string; name: string; events: LedgerEvent[] }) => Promise<void>;
   importFile: (text: string) => Promise<void>;
@@ -195,6 +202,45 @@ export const useGroupStore = create<GroupState>((set, get) => {
 
     voidEntry: async (entryId) => {
       await append([{ kind: 'void', ...base(), supersedes: entryId }]);
+      // A removed entry's local receipt photo has nothing to attach to.
+      const { activeId } = get();
+      if (activeId) void deletePhoto(activeId, entryId);
+    },
+
+    addRecurring: async (t) => {
+      const g = activeGroup();
+      const template: RecurringTemplate = { ...t, id: randomEventId(), createdOn: new Date().toISOString().slice(0, 10) };
+      await persist({ ...g, recurring: [...(g.recurring ?? []), template] });
+    },
+
+    removeRecurring: async (templateId) => {
+      const g = activeGroup();
+      await persist({ ...g, recurring: (g.recurring ?? []).filter((t) => t.id !== templateId) });
+    },
+
+    addOccurrence: async (templateId, dueDate) => {
+      const g = activeGroup();
+      const t = (g.recurring ?? []).find((x) => x.id === templateId);
+      if (!t) return;
+      await append([
+        {
+          kind: 'expense', ...base(), payer: t.payer, minor: t.minor, currency: t.currency,
+          date: dueDate, description: t.description, category: 'Recurring', split: t.split,
+        } as ExpenseEvent,
+      ]);
+      const fresh = activeGroup();
+      await persist({
+        ...fresh,
+        recurring: (fresh.recurring ?? []).map((x) => (x.id === templateId ? { ...x, lastAdded: dueDate } : x)),
+      });
+    },
+
+    skipOccurrence: async (templateId, dueDate) => {
+      const g = activeGroup();
+      await persist({
+        ...g,
+        recurring: (g.recurring ?? []).map((x) => (x.id === templateId ? { ...x, lastAdded: dueDate } : x)),
+      });
     },
 
     compactBefore: async (cutoffDate) => {

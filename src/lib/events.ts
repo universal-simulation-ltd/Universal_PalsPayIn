@@ -18,12 +18,25 @@ export interface BaseEvent {
   at: number; // ms epoch when authored; display + tie-break only
 }
 
+/**
+ * Payment handles a member chose to share with the group. THEIRS, stored in
+ * the ledger like any other member field, never a directory we run. Only
+ * PayPal.me links can carry an amount from outside the vendor's own app —
+ * the UI must not pretend the others do (§18.4).
+ */
+export interface MemberHandles {
+  paypal?: string; // paypal.me/<this>
+  monzo?: string; // monzo.me/<this> — payer types the amount inside Monzo
+  revolut?: string; // revolut.me/<this> — handle-only likewise
+  /** Free text for a bank transfer: sort code, account number, reference. Copied to the clipboard, never turned into a link that looks like it will do something. */
+  bank?: string;
+}
+
 export interface MemberEvent extends BaseEvent {
   kind: 'member';
   name: string;
   colour: string;
-  /** Optional payment handle the member chose to share (e.g. a paypal.me name). Theirs, stored locally, never ours. */
-  handle?: string;
+  handles?: MemberHandles;
 }
 
 export type SplitSpec =

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useGroupStore } from '../stores/groupStore';
 import { effectiveLedger } from '../lib/events';
 import { balances, pairwiseDebts } from '../lib/balances';
+import { dueOccurrence, type RecurringTemplate } from '../lib/recurring';
+import { formatAmount } from '../lib/money';
 import EntryList from './EntryList';
 import ExpenseForm from './ExpenseForm';
 import PaymentForm from './PaymentForm';
@@ -77,6 +79,8 @@ export default function GroupView({ groupId }: { groupId: string }) {
 
       {showMembers && <MembersEditor members={eff.members} />}
 
+      <RecurringNudges />
+
       {adding === 'expense' && <ExpenseForm members={eff.members} onClose={() => setAdding(null)} />}
       {adding === 'payment' && <PaymentForm members={eff.members} onClose={() => setAdding(null)} />}
 
@@ -101,6 +105,54 @@ export default function GroupView({ groupId }: { groupId: string }) {
       {tab === 'balances' && <BalancesView ledger={eff} bal={bal} pairwise={pairwise} />}
       {tab === 'settle' && <SettleView ledger={eff} bal={bal} pairwise={pairwise} />}
       {tab === 'share' && <ShareView group={group} ledger={eff} />}
+    </div>
+  );
+}
+
+/**
+ * "It's the 1st — add the rent?" Templates only ever NUDGE; nothing is added
+ * without a tap, and a skipped month stays skipped. If two housemates both
+ * add it, the duplicate-suspicion prompt catches it at merge — by design.
+ */
+function RecurringNudges() {
+  const activeId = useGroupStore((s) => s.activeId);
+  const group = useGroupStore((s) => s.groups.find((g) => g.groupId === s.activeId));
+  const addOccurrence = useGroupStore((s) => s.addOccurrence);
+  const skipOccurrence = useGroupStore((s) => s.skipOccurrence);
+  if (!activeId || !group?.recurring?.length) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const due = group.recurring
+    .map((t) => ({ t, due: dueOccurrence(t, today) }))
+    .filter((x): x is { t: RecurringTemplate; due: string } => x.due !== null);
+  if (due.length === 0) return null;
+  return (
+    <div className="no-print space-y-2">
+      {due.map(({ t, due: dueDate }) => (
+        <div
+          key={t.id}
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200"
+        >
+          <span>
+            <strong>{t.description}</strong> ({formatAmount(t.minor, t.currency)}, monthly on day {t.dayOfMonth}) is due for {dueDate}.
+          </span>
+          <span className="flex gap-2">
+            <button
+              type="button"
+              className="rounded-md bg-orange-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-orange-500"
+              onClick={() => void addOccurrence(t.id, dueDate)}
+            >
+              Add it
+            </button>
+            <button
+              type="button"
+              className="rounded-md px-2.5 py-1 text-xs font-medium underline-offset-2 hover:underline"
+              onClick={() => void skipOccurrence(t.id, dueDate)}
+            >
+              Skip this month
+            </button>
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

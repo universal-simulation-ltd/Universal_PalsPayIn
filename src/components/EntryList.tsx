@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { EffectiveLedger, EventId, ExpenseEvent, PaymentEvent } from '../lib/events';
-import type { StoredGroup } from '../lib/store';
+import { deletePhoto, downscalePhoto, loadPhoto, savePhoto, type StoredGroup } from '../lib/store';
 import { formatAmount } from '../lib/money';
 import { computeShares } from '../lib/split';
 import { useGroupStore } from '../stores/groupStore';
@@ -131,6 +131,8 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
                 ))}
               </ul>
             )}
+
+            {expandedId === e.id && e.kind === 'expense' && <ReceiptPhoto groupId={group.groupId} entryId={e.id} />}
           </article>
         );
       })}
@@ -154,6 +156,73 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
       <p className="text-center text-[11px] text-slate-400 dark:text-slate-500">
         {group.events.length} events in the log — nothing is ever deleted, removals are recorded too.
       </p>
+    </div>
+  );
+}
+
+/**
+ * A locally-attached receipt photo. IndexedDB only, downscaled, and NEVER
+ * part of the event log — so it cannot reach share links, ledger files,
+ * CSVs or the encrypted relay. The photo of your dinner stays on the device
+ * that took it, and the UI says exactly that.
+ */
+function ReceiptPhoto({ groupId, entryId }: { groupId: string; entryId: EventId }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    void loadPhoto(groupId, entryId).then((blob) => {
+      if (blob) {
+        objectUrl = URL.createObjectURL(blob);
+        setUrl(objectUrl);
+      }
+      setLoaded(true);
+    });
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [groupId, entryId]);
+
+  if (!loaded) return null;
+
+  return (
+    <div className="no-print mt-2 text-xs">
+      {url ? (
+        <div className="flex items-start gap-3">
+          <a href={url} target="_blank" rel="noreferrer">
+            <img src={url} alt="Receipt" className="max-h-28 rounded-lg border border-slate-200 dark:border-slate-700" />
+          </a>
+          <button
+            type="button"
+            className="font-medium text-red-600/70 hover:text-red-600 hover:underline"
+            onClick={() => {
+              void deletePhoto(groupId, entryId);
+              setUrl(null);
+            }}
+          >
+            Remove photo
+          </button>
+        </div>
+      ) : (
+        <button type="button" className="font-medium text-slate-500 hover:underline dark:text-slate-400" onClick={() => input.current?.click()}>
+          📎 Attach a receipt photo — stays on this device only, never in links, files or sync
+        </button>
+      )}
+      <input
+        ref={input}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = '';
+          if (!f) return;
+          void downscalePhoto(f)
+            .then((blob) => savePhoto(groupId, entryId, blob).then(() => setUrl(URL.createObjectURL(blob))));
+        }}
+      />
     </div>
   );
 }

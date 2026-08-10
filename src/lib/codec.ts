@@ -12,7 +12,12 @@ import type {
 } from './events';
 
 const MAGIC = [0x55, 0x50, 0x31]; // "UP1"
-const FORMAT_VERSION = 1;
+// v1 → launch format. v2 (same day) → member bodies carry structured payment
+// handles (paypal/monzo/revolut/bank) instead of one generic handle string.
+// The decoder accepts both; the encoder writes CURRENT_VERSION (tests pin the
+// v1 path so it cannot rot).
+const FORMAT_VERSION = 2;
+const OLDEST_READABLE_VERSION = 1;
 const EPOCH_2020 = Date.UTC(2020, 0, 1);
 
 export const MEMBER_COLOURS = [
@@ -106,10 +111,12 @@ class Reader {
 
 // --------------------------------------------------------------------------- encode
 
-export function encodeLedger(group: Pick<Group, 'groupId' | 'name' | 'events'>): Uint8Array {
+export function encodeLedger(group: Pick<Group, 'groupId' | 'name' | 'events'>, opts?: { version?: number }): Uint8Array {
+  const version = opts?.version ?? FORMAT_VERSION;
+  if (version < OLDEST_READABLE_VERSION || version > FORMAT_VERSION) throw new Error(`cannot encode format v${version}`);
   const w = new Writer();
   w.bytes(MAGIC);
-  w.byte(FORMAT_VERSION);
+  w.byte(version);
   for (let i = 0; i < 32; i += 2) w.byte(parseInt(group.groupId.slice(i, i + 2), 16));
   w.string(group.name);
 
@@ -142,7 +149,7 @@ export function encodeLedger(group: Pick<Group, 'groupId' | 'name' | 'events'>):
     switch (e.kind) {
       case 'member':
         w.byte(0);
-        encodeMemberBody(w, e);
+        encodeMemberBody(w, e, version);
         break;
       case 'expense':
         w.byte(1);
@@ -164,7 +171,7 @@ export function encodeLedger(group: Pick<Group, 'groupId' | 'name' | 'events'>):
           encodePaymentBody(w, body as never, memberIdx, currencyIdx);
         } else {
           w.byte(0);
-          encodeMemberBody(w, body as never);
+          encodeMemberBody(w, body as never, version);
         }
         break;
       }
@@ -238,7 +245,9 @@ function collectRefs(events: LedgerEvent[], memberIds: EventId[], authors: strin
   }
 }
 
-function encodeMemberBody(w: Writer, m: Pick<MemberEvent, 'name' | 'colour' | 'handle'>) {
+const HANDLE_KEYS = ['paypal', 'monzo', 'revolut', 'bank'] as const;
+
+function encodeMemberBody(w: Writer, m: Pick<MemberEvent, 'name' | 'colour' | 'handles'>, version: number) {
   w.string(m.name);
   const pal = MEMBER_COLOURS.indexOf(m.colour);
   if (pal >= 0) w.byte(pal);
@@ -246,17 +255,38 @@ function encodeMemberBody(w: Writer, m: Pick<MemberEvent, 'name' | 'colour' | 'h
     w.byte(255);
     w.string(m.colour);
   }
-  w.byte(m.handle ? 1 : 0);
-  if (m.handle) w.string(m.handle);
+  if (version === 1) {
+    // v1 carried one generic handle; map the paypal one, drop the rest.
+    const legacy = m.handles?.paypal;
+    w.byte(legacy ? 1 : 0);
+    if (legacy) w.string(legacy);
+    return;
+  }
+  let flags = 0;
+  HANDLE_KEYS.forEach((k, i) => {
+    if (m.handles?.[k]) flags |= 1 << i;
+  });
+  w.byte(flags);
+  for (const k of HANDLE_KEYS) {
+    if (m.handles?.[k]) w.string(m.handles[k]!);
+  }
 }
 
-function decodeMemberBody(r: Reader): Pick<MemberEvent, 'name' | 'colour' | 'handle'> {
+function decodeMemberBody(r: Reader, version: number): Pick<MemberEvent, 'name' | 'colour' | 'handles'> {
   const name = r.string();
   const pal = r.byte();
   const colour = pal === 255 ? r.string() : MEMBER_COLOURS[pal] ?? MEMBER_COLOURS[0];
-  const hasHandle = r.byte() === 1;
-  const handle = hasHandle ? r.string() : undefined;
-  return { name, colour, ...(handle ? { handle } : {}) };
+  if (version === 1) {
+    const hasHandle = r.byte() === 1;
+    const legacy = hasHandle ? r.string() : undefined;
+    return { name, colour, ...(legacy ? { handles: { paypal: legacy } } : {}) };
+  }
+  const flags = r.byte();
+  const handles: Record<string, string> = {};
+  HANDLE_KEYS.forEach((k, i) => {
+    if (flags & (1 << i)) handles[k] = r.string();
+  });
+  return { name, colour, ...(Object.keys(handles).length ? { handles } : {}) };
 }
 
 function encodeDate(w: Writer, iso: string) {
@@ -352,7 +382,8 @@ export function decodeLedger(data: Uint8Array): Pick<Group, 'groupId' | 'name' |
   const r = new Reader(data);
   for (const m of MAGIC) if (r.byte() !== m) throw new Error('Not a PalsPayIn ledger');
   const version = r.byte();
-  if (version !== FORMAT_VERSION) throw new Error(`Ledger format v${version} is newer than this app understands`);
+  if (version > FORMAT_VERSION) throw new Error(`Ledger format v${version} is newer than this app understands`);
+  if (version < OLDEST_READABLE_VERSION) throw new Error(`Ledger format v${version} is not readable`);
   const groupId = Array.from(r.bytes(16), (b) => b.toString(16).padStart(2, '0')).join('');
   const name = r.string();
 
@@ -437,7 +468,7 @@ export function decodeLedger(data: Uint8Array): Pick<Group, 'groupId' | 'name' |
     const at = EPOCH_2020 + r.varint() * 1000;
     const tag = r.byte();
     if (tag === 0) {
-      events.push({ kind: 'member', id, author, at, ...decodeMemberBody(r) } as MemberEvent);
+      events.push({ kind: 'member', id, author, at, ...decodeMemberBody(r, version) } as MemberEvent);
     } else if (tag === 1) {
       events.push({ kind: 'expense', id, author, at, ...decodeExpenseBody() } as ExpenseEvent);
     } else if (tag === 2) {
@@ -445,7 +476,7 @@ export function decodeLedger(data: Uint8Array): Pick<Group, 'groupId' | 'name' |
     } else if (tag === 3) {
       const supersedes = r.hexId();
       const bodyTag = r.byte();
-      const body = bodyTag === 1 ? decodeExpenseBody() : bodyTag === 2 ? decodePaymentBody() : decodeMemberBody(r);
+      const body = bodyTag === 1 ? decodeExpenseBody() : bodyTag === 2 ? decodePaymentBody() : decodeMemberBody(r, version);
       events.push({ kind: 'amend', id, author, at, supersedes, body } as AmendEvent);
     } else if (tag === 4) {
       events.push({ kind: 'void', id, author, at, supersedes: r.hexId() } as VoidEvent);

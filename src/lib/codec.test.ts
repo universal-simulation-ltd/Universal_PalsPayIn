@@ -9,7 +9,10 @@ let n = 0;
 const id = () => (n++).toString(16).padStart(12, '0');
 
 function fullLog(): { groupId: string; name: string; events: LedgerEvent[] } {
-  const m1: MemberEvent = { kind: 'member', id: id(), author: 'dev1', at: 1_700_000_000_000, name: 'Sam', colour: MEMBER_COLOURS[0], handle: 'sam-pays' };
+  const m1: MemberEvent = {
+    kind: 'member', id: id(), author: 'dev1', at: 1_700_000_000_000, name: 'Sam', colour: MEMBER_COLOURS[0],
+    handles: { paypal: 'sam-pays', monzo: 'samm', bank: 'Sort 04-00-04, acct 12345678' },
+  };
   const m2: MemberEvent = { kind: 'member', id: id(), author: 'dev2', at: 1_700_000_001_000, name: 'Alex ✨', colour: '#123456' }; // off-palette colour + non-ASCII
   const e1: ExpenseEvent = {
     kind: 'expense', id: id(), author: 'dev1', at: 1_700_000_002_000, payer: m1.id, minor: 4260, currency: 'GBP',
@@ -95,6 +98,18 @@ describe('binary codec', () => {
     const bytes = encodeLedger(fullLog());
     bytes[3] = 99;
     expect(() => decodeLedger(bytes)).toThrow(/newer/);
+  });
+
+  it('still decodes v1 links (launch format) — the generic handle maps to paypal, other handles are dropped', () => {
+    const log = fullLog();
+    const v1 = encodeLedger(log, { version: 1 });
+    const decoded = decodeLedger(v1);
+    const m1 = decoded.events[0] as MemberEvent;
+    expect(m1.handles).toEqual({ paypal: 'sam-pays' }); // monzo + bank cannot ride in v1
+    // Everything except member handles roundtrips identically.
+    const stripHandles = (evs: typeof log.events) =>
+      evs.map((e) => (e.kind === 'member' ? { ...e, handles: undefined } : e));
+    expect(stripHandles(decoded.events)).toEqual(stripHandles(log.events));
   });
 
   it('refuses garbage', () => {

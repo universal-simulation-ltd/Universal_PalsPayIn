@@ -11,6 +11,7 @@ import { btnDanger, btnGhost, btnPrimary, card } from './ui';
 export default function ShareView({ group, ledger }: { group: StoredGroup; ledger: EffectiveLedger }) {
   const importFile = useGroupStore((s) => s.importFile);
   const compactBefore = useGroupStore((s) => s.compactBefore);
+  const removeRecurring = useGroupStore((s) => s.removeRecurring);
   const enableRelay = useGroupStore((s) => s.enableRelay);
   const disableRelay = useGroupStore((s) => s.disableRelay);
   const syncNow = useGroupStore((s) => s.syncNow);
@@ -190,6 +191,27 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
       {/* ------------------------------------------------ housekeeping */}
       <section className={card}>
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Housekeeping</h2>
+        {(group.recurring?.length ?? 0) > 0 && (
+          <div className="mt-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Monthly nudges (this device only)</h3>
+            <ul className="mt-1.5 space-y-1 text-sm text-slate-700 dark:text-slate-300">
+              {group.recurring!.map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-2">
+                  <span>
+                    {t.description} — day {t.dayOfMonth} each month
+                  </span>
+                  <button type="button" className="text-xs font-medium text-red-600/70 hover:text-red-600 hover:underline" onClick={() => void removeRecurring(t.id)}>
+                    Stop
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Nudges live on this device and only ever ask — the expenses they add sync like any other. Set one up with the
+              “repeat monthly” tick when adding an expense.
+            </p>
+          </div>
+        )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             type="button"
