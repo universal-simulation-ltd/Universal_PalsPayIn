@@ -123,8 +123,8 @@ function TransferRow({
           <MemberDot colour={colourOf(t.from)} name={nameOf(t.from)} /> <span className="text-slate-400">pays</span>{' '}
           <MemberDot colour={colourOf(t.to)} name={nameOf(t.to)} />
         </span>
-        <span className="flex items-center gap-3">
-          <span className="tabular font-semibold text-slate-900 dark:text-slate-100">{formatAmount(t.minor, t.currency)}</span>
+        <span className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <span className="tabular font-semibold whitespace-nowrap text-slate-900 dark:text-slate-100">{formatAmount(t.minor, t.currency)}</span>
           {options.length > 0 && (
             <button
               type="button"

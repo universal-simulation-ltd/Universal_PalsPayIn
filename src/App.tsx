@@ -32,7 +32,7 @@ export default function App() {
         suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
       />
       <UsageTracker />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+      <main className="gutter mx-auto w-full max-w-5xl flex-1 py-6 sm:py-8">
         {importNotice && (
           <div className="no-print mb-4 flex items-start justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200">
             <p>{importNotice}</p>
@@ -45,7 +45,7 @@ export default function App() {
         {!loaded ? null : activeId ? <GroupView key={activeId} groupId={activeId} /> : <GroupList />}
       </main>
       <footer className="no-print border-t border-slate-200 bg-white py-4 dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2 px-4 text-xs text-slate-500 sm:px-6 lg:px-8 dark:text-slate-400">
+        <div className="gutter mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
           <p>
             A shared-expense ledger. It records what is owed and what people say they sent —{' '}
             <strong className="font-semibold">it never moves money.</strong>

@@ -77,7 +77,7 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
                 </div>
               </div>
             ) : (
-              <span className="flex items-center gap-2">
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <MemberDot colour={m.colour} name={m.name} />
                 {m.handles && Object.keys(m.handles).length > 0 && (
                   <span className="text-[11px] text-slate-400 dark:text-slate-500">
@@ -100,7 +100,7 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
         <input className={inputCls} value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Add someone…" />
         <button
           type="button"
-          className={newName.trim() ? btnPrimary : btnGhost}
+          className={`${newName.trim() ? btnPrimary : btnGhost} shrink-0`}
           disabled={newName.trim() === ''}
           onClick={() => {
             void addMember(newName);

@@ -17,11 +17,53 @@ body {
 
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Group names, notes and bank details are free text: a long unbroken string
+     must wrap rather than widen the page. */
+  overflow-wrap: break-word;
+}
+
+/* The page gutter, which is also the `viewport-fit=cover` safe area: on a
+   notched phone held sideways the notch eats one edge, and content under it is
+   content nobody can read or tap. It sits on the content containers rather
+   than the page so that backgrounds still reach the screen edge. The three
+   steps match Tailwind's px-4 / sm:px-6 / lg:px-8. */
+.gutter {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+@media (min-width: 40rem) {
+  .gutter {
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+
+@media (min-width: 64rem) {
+  .gutter {
+    padding-left: max(2rem, env(safe-area-inset-left));
+    padding-right: max(2rem, env(safe-area-inset-right));
+  }
 }
 
 /* Amount columns line up or the table reads as noise. */
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* iOS Safari zooms the page in when a field under 16px takes focus, and it
+   does not zoom back out — which is how a layout that fits ends up half
+   off-screen with the right-hand edge unreachable. Touch devices therefore get
+   a 16px floor on every control, in any orientation; pointer devices keep the
+   denser 14px. `!important` and the bare element selectors are deliberate:
+   this has to reach the controls the suite chrome renders with inline styles,
+   which no class of ours can touch. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
 }
 
 @media print {
