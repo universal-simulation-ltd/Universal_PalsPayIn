@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useFileDrop } from '@unisim/sdk';
 import type { EffectiveLedger, EventId, ExpenseEvent, PaymentEvent } from '../lib/events';
 import { deletePhoto, downscalePhoto, loadPhoto, savePhoto, type StoredGroup } from '../lib/store';
 import { formatAmount } from '../lib/money';
@@ -169,7 +170,20 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
 function ReceiptPhoto({ groupId, entryId }: { groupId: string; entryId: EventId }) {
   const [url, setUrl] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
+  // Receipt photos never leave the device, so this is a picker and nothing
+  // more — the SDK owns the input so the same photo can be re-attached after a
+  // Remove.
+  const picker = useFileDrop({
+    onFiles: (files) => {
+      const f = files[0];
+      if (!f) return;
+      void downscalePhoto(f)
+        .then((blob) => savePhoto(groupId, entryId, blob).then(() => setUrl(URL.createObjectURL(blob))));
+    },
+    accept: 'image/*',
+    multiple: false,
+    clickToBrowse: false,
+  });
 
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -206,23 +220,11 @@ function ReceiptPhoto({ groupId, entryId }: { groupId: string; entryId: EventId 
           </button>
         </div>
       ) : (
-        <button type="button" className="font-medium text-slate-500 hover:underline dark:text-slate-400" onClick={() => input.current?.click()}>
+        <button type="button" className="font-medium text-slate-500 hover:underline dark:text-slate-400" onClick={picker.open}>
           📎 Attach a receipt photo — stays on this device only, never in links, files or sync
         </button>
       )}
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          e.target.value = '';
-          if (!f) return;
-          void downscalePhoto(f)
-            .then((blob) => savePhoto(groupId, entryId, blob).then(() => setUrl(URL.createObjectURL(blob))));
-        }}
-      />
+      <input {...picker.inputProps} className="hidden" />
     </div>
   );
 }
