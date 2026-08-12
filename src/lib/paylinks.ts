@@ -11,11 +11,12 @@
 // transfer is honestly "copy the details", not a link that looks like it
 // will do something.
 
-import type { MemberHandles } from './events';
+import type { BankAccount, MemberHandles } from './events';
+import { bankAccountFilled } from './events';
 import { currencyExponent, formatAmount } from './money';
 
 export interface PayOption {
-  kind: 'paypal' | 'monzo' | 'revolut' | 'bank';
+  kind: 'cash' | 'paypal' | 'monzo' | 'revolut' | 'bank';
   /** Button label. Never claims more than the mechanism delivers. */
   label: string;
   url?: string;
@@ -41,12 +42,42 @@ function decimalAmount(minor: number, currency: string): string {
   return exp === 0 ? String(minor) : `${Math.floor(minor / 10 ** exp)}.${String(minor % 10 ** exp).padStart(exp, '0')}`;
 }
 
+/**
+ * Bank details as a person reads them out, one per line. Structured fields
+ * first, then whatever they typed in the free-text box — both, if they filled
+ * in both, because dropping half someone's details to keep the output tidy is
+ * how a transfer goes to the wrong account.
+ */
+export function bankDetailsText(handles: MemberHandles | undefined): string | null {
+  if (!handles) return null;
+  const a: BankAccount = handles.bankAccount ?? {};
+  const lines = [
+    a.name?.trim() && `Account name: ${a.name.trim()}`,
+    a.sortCode?.trim() && `Sort code: ${a.sortCode.trim()}`,
+    a.number?.trim() && `Account number: ${a.number.trim()}`,
+    a.reference?.trim() && `Reference: ${a.reference.trim()}`,
+    handles.bank?.trim(),
+  ].filter((x): x is string => Boolean(x));
+  return lines.length > 0 ? lines.join('\n') : null;
+}
+
 export function payOptions(handles: MemberHandles | undefined, minor: number, currency: string): PayOption[] {
   if (!handles) return [];
   const out: PayOption[] = [];
   const amount = decimalAmount(minor, currency);
   const pretty = formatAmount(minor, currency);
 
+  if (handles.cash) {
+    out.push({
+      kind: 'cash',
+      label: 'Cash is fine',
+      copyText: pretty,
+      carriesAmount: false,
+      // No link, no app, nothing to open — the button exists so the ledger can
+      // say which methods were offered, and so the amount is one tap away.
+      note: `They said cash suits them. Hand it over, then record it here — ${pretty} is on your clipboard if you need it.`,
+    });
+  }
   if (handles.paypal) {
     const h = cleanHandle(handles.paypal);
     if (h) {
@@ -85,11 +116,11 @@ export function payOptions(handles: MemberHandles | undefined, minor: number, cu
       });
     }
   }
-  if (handles.bank?.trim()) {
+  if (handles.bank?.trim() || bankAccountFilled(handles.bankAccount)) {
     out.push({
       kind: 'bank',
       label: 'Copy their bank details',
-      copyText: `${handles.bank.trim()}\nAmount: ${pretty}`,
+      copyText: `${bankDetailsText(handles)}\nAmount: ${pretty}`,
       carriesAmount: false,
       note: 'Paste into your own banking app. There is no UK payment-link standard, so this is honestly a copy, not a link.',
     });

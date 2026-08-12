@@ -98,6 +98,13 @@ export default function ExpenseForm({
   }, [mode, participants, exactAmounts, weights, percents, items, adjustments, members, currency]);
 
   const percentSum = mode === 'percent' ? members.reduce((a, m) => a + (Number(percents[m.id]) || 0), 0) : 100;
+  // The running total for the uneven split. Blank and unparseable boxes count
+  // as nothing rather than freezing the tally — you are meant to watch this
+  // while you type, and it is the save button's job to refuse a bad split.
+  const exactSum =
+    mode === 'exact'
+      ? members.reduce((a, m) => a + (parseAmount(exactAmounts[m.id] ?? '', currency) ?? 0), 0)
+      : 0;
   const hasNaN =
     split !== null &&
     ((split.mode === 'exact' && split.amounts.some((a) => Number.isNaN(a.minor))) ||
@@ -242,6 +249,12 @@ export default function ExpenseForm({
 
       {(mode === 'exact' || mode === 'shares' || mode === 'percent') && (
         <div className="grid gap-2 sm:grid-cols-2">
+          {mode === 'exact' && (
+            <p className="text-xs text-slate-500 sm:col-span-2 dark:text-slate-400">
+              Give each person their part of the bill — £20 for one, £15 for another. Include the person who paid if some of it was
+              theirs: it is recorded as their share, and they do not end up owing it to themselves.
+            </p>
+          )}
           {members.map((m) => (
             <div key={m.id} className="flex items-center gap-2">
               <span className="w-24 shrink-0 truncate text-sm text-slate-700 sm:w-32 dark:text-slate-300">
@@ -265,6 +278,11 @@ export default function ExpenseForm({
             <p className={`text-xs ${Math.abs(percentSum - 100) > 1e-9 ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500'}`}>
               Total: {round2(percentSum)}%
             </p>
+          )}
+          {mode === 'exact' && (
+            <div className="sm:col-span-2">
+              <AllocationMeter allocated={exactSum} total={minor} currency={currency} />
+            </div>
           )}
         </div>
       )}
@@ -324,6 +342,42 @@ export default function ExpenseForm({
         </button>
       </div>
     </section>
+  );
+}
+
+/**
+ * "£75 of £100 — £25 left to allocate." Splitting a bill unevenly is
+ * arithmetic done in your head at a table, and the one thing you want to see
+ * while doing it is how much is still unaccounted for.
+ */
+function AllocationMeter({ allocated, total, currency }: { allocated: number; total: number | null; currency: string }) {
+  if (total === null || total <= 0) {
+    return (
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Allocated so far: <span className="tabular font-semibold">{formatAmount(allocated, currency)}</span>. Enter the bill total
+        above to see what is left.
+      </p>
+    );
+  }
+  const left = total - allocated;
+  const pct = Math.max(0, Math.min(100, (allocated / total) * 100));
+  const tone = left === 0 ? 'text-emerald-700 dark:text-emerald-400' : left < 0 ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400';
+  return (
+    <div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+        <div
+          className={`h-full rounded-full transition-[width] ${left < 0 ? 'bg-amber-500' : left === 0 ? 'bg-emerald-500' : 'bg-orange-500'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className={`mt-1 text-xs ${tone}`}>
+        <span className="tabular font-semibold">{formatAmount(allocated, currency)}</span> of{' '}
+        <span className="tabular">{formatAmount(total, currency)}</span> allocated
+        {left > 0 && <> — <span className="tabular font-semibold">{formatAmount(left, currency)}</span> still to go</>}
+        {left < 0 && <> — <span className="tabular font-semibold">{formatAmount(-left, currency)}</span> over the total</>}
+        {left === 0 && <> — that's all of it ✓</>}
+      </p>
+    </div>
   );
 }
 
