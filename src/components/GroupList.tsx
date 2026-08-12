@@ -117,7 +117,7 @@ export default function GroupList() {
             <button
               type="button"
               onClick={() => void loadExample()}
-              className="font-semibold text-orange-700 underline underline-offset-2 hover:text-orange-600 dark:text-orange-400"
+              className="font-semibold text-orange-700 underline underline-offset-2 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300"
             >
               Load an example
             </button>{' '}
