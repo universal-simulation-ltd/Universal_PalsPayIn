@@ -51,7 +51,7 @@ export default function PaymentForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="grid grid-cols-2 gap-2">
-          <div>
+          <div className="min-w-0">
             <label className={label}>From</label>
             <select className={`${selectCls} w-full`} value={from} onChange={(e) => setFrom(e.target.value)}>
               {members.map((m) => (
@@ -61,7 +61,7 @@ export default function PaymentForm({
               ))}
             </select>
           </div>
-          <div>
+          <div className="min-w-0">
             <label className={label}>To</label>
             <select className={`${selectCls} w-full`} value={to} onChange={(e) => setTo(e.target.value)}>
               {members.map((m) => (
@@ -73,11 +73,11 @@ export default function PaymentForm({
           </div>
         </div>
         <div className="grid grid-cols-[1fr_auto] gap-2">
-          <div>
+          <div className="min-w-0">
             <label className={label}>Amount</label>
             <input className={`${inputCls} tabular`} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="15.00" />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className={label}>Currency</label>
             <select className={selectCls} value={currency} onChange={(e) => setCurrency(e.target.value)}>
               {(COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES]).map((c) => (
@@ -88,11 +88,11 @@ export default function PaymentForm({
             </select>
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <label className={label}>Date</label>
           <input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
-        <div>
+        <div className="min-w-0">
           <label className={label}>Note (optional)</label>
           <input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} placeholder="bank transfer" />
         </div>

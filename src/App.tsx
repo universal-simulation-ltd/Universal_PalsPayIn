@@ -17,7 +17,11 @@ import { useGroupStore } from './stores/groupStore';
 // 1280px row with the profile cluster pinned 12px off the VIEWPORT edge. At
 // 1440px that put the bar at 80–1360 over content at 208–1232, overhanging it
 // by ~128px on each side. Universal PDF and Images are the pattern this copies.
-export const CONTAINER = 'mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8'
+//
+// `gutter` (index.css) is px-4 / sm:px-6 / lg:px-8 widened by the safe-area
+// insets, so on a notched phone held sideways the navbar keeps clear of the
+// notch along with everything else it lines up with.
+export const CONTAINER = 'gutter mx-auto w-full max-w-5xl'
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_PalsPayIn';
 
@@ -44,7 +48,7 @@ export default function App() {
         suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
       />
       <UsageTracker />
-      <main className={`${CONTAINER} flex-1 py-8`}>
+      <main className={`${CONTAINER} flex-1 py-6 sm:py-8`}>
         {importNotice && (
           <div className="no-print mb-4 flex items-start justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200">
             <p>{importNotice}</p>

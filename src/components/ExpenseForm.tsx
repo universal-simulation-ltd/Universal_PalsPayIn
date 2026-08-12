@@ -162,21 +162,21 @@ export default function ExpenseForm({
       <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{editing ? 'Edit expense' : 'Add an expense'}</h2>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <label className={label}>Description</label>
           <input className={inputCls} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Taxi from the airport" autoFocus />
         </div>
         <div className="grid grid-cols-[1fr_auto] gap-2">
-          <div>
+          <div className="min-w-0">
             <label className={label}>Amount</label>
             <input className={`${inputCls} tabular`} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="42.60" />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className={label}>Currency</label>
             <CurrencySelect value={currency} onChange={setCurrency} />
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <label className={label}>Paid by</label>
           <select className={`${selectCls} w-full`} value={payer} onChange={(e) => setPayer(e.target.value)}>
             {members.map((m) => (
@@ -186,12 +186,14 @@ export default function ExpenseForm({
             ))}
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
+        {/* Stacked on a phone: a date field cannot shrink past the date it
+            shows, so half a narrow row is not enough for it. */}
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="min-w-0">
             <label className={label}>Date</label>
             <input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className={label}>Category (optional)</label>
             <input className={inputCls} value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Food" />
           </div>
@@ -242,7 +244,7 @@ export default function ExpenseForm({
         <div className="grid gap-2 sm:grid-cols-2">
           {members.map((m) => (
             <div key={m.id} className="flex items-center gap-2">
-              <span className="w-32 truncate text-sm text-slate-700 dark:text-slate-300">
+              <span className="w-24 shrink-0 truncate text-sm text-slate-700 sm:w-32 dark:text-slate-300">
                 <MemberDot colour={m.colour} name={m.name} />
               </span>
               <input
@@ -285,11 +287,11 @@ export default function ExpenseForm({
         </button>
         {showCharged && (
           <div className="mt-2 grid grid-cols-[1fr_auto] gap-2 sm:max-w-sm">
-            <div>
+            <div className="min-w-0">
               <label className={label}>What the card was actually charged</label>
               <input className={`${inputCls} tabular`} inputMode="decimal" value={chargedAmount} onChange={(e) => setChargedAmount(e.target.value)} placeholder="36.90" />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className={label}>In</label>
               <CurrencySelect value={chargedCurrency} onChange={setChargedCurrency} />
             </div>
@@ -358,7 +360,7 @@ function ItemisedEditor({
               onChange={(e) => setItems((v) => v.map((x, i) => (i === idx ? { ...x, label: e.target.value } : x)))}
             />
             <input
-              className={`${inputCls} tabular max-w-28`}
+              className={`${inputCls} tabular shrink-0 grow-0 basis-24 sm:basis-28`}
               inputMode="decimal"
               placeholder="0.00"
               value={item.amount}
@@ -366,7 +368,7 @@ function ItemisedEditor({
             />
             <button
               type="button"
-              className="text-slate-400 hover:text-red-600"
+              className="shrink-0 text-slate-400 hover:text-red-600"
               aria-label="Remove item"
               onClick={() => setItems((v) => v.filter((_, i) => i !== idx))}
             >
@@ -420,7 +422,7 @@ function ItemisedEditor({
             <option value="discount">Discount</option>
           </select>
           <input
-            className={`${inputCls} tabular max-w-28`}
+            className={`${inputCls} tabular shrink-0 grow-0 basis-24 sm:basis-28`}
             inputMode="decimal"
             placeholder="0.00"
             value={adj.amount}
@@ -439,7 +441,7 @@ function ItemisedEditor({
               </option>
             ))}
           </select>
-          <button type="button" className="text-slate-400 hover:text-red-600" aria-label="Remove adjustment" onClick={() => setAdjustments((v) => v.filter((_, i) => i !== idx))}>
+          <button type="button" className="shrink-0 text-slate-400 hover:text-red-600" aria-label="Remove adjustment" onClick={() => setAdjustments((v) => v.filter((_, i) => i !== idx))}>
             ✕
           </button>
         </div>

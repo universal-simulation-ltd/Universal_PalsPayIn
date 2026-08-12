@@ -40,7 +40,7 @@ export default function BalancesView({
             <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{currency}</h2>
             <ul className="space-y-2">
               {nets.map(([member, net]) => (
-                <li key={member} className="grid grid-cols-[8rem_1fr_auto] items-center gap-2 text-sm">
+                <li key={member} className="grid grid-cols-[minmax(0,5rem)_1fr_auto] items-center gap-2 text-sm sm:grid-cols-[8rem_1fr_auto]">
                   <span className="truncate text-slate-700 dark:text-slate-300">
                     <MemberDot colour={colourOf(member)} name={nameOf(member)} />
                   </span>
@@ -51,7 +51,7 @@ export default function BalancesView({
                       style={{ width: `${(Math.abs(net) / max) * 48}%` }}
                     />
                   </div>
-                  <span className={`tabular font-semibold ${net >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                  <span className={`tabular whitespace-nowrap font-semibold ${net >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}`}>
                     {net > 0 ? 'is owed ' : 'owes '}
                     {formatAmount(Math.abs(net), currency)}
                   </span>
@@ -73,7 +73,7 @@ export default function BalancesView({
         ) : (
           <ul className="space-y-1.5 text-sm">
             {pairwise.map((d, i) => (
-              <li key={i} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
+              <li key={i} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
                 <span className="text-slate-700 dark:text-slate-300">
                   <MemberDot colour={colourOf(d.from)} name={nameOf(d.from)} /> <span className="text-slate-400">owes</span>{' '}
                   <MemberDot colour={colourOf(d.to)} name={nameOf(d.to)} />
