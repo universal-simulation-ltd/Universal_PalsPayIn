@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useFileDrop } from '@unisim/sdk';
-import { QRCodeSVG } from 'qrcode.react';
 import type { EffectiveLedger } from '../lib/events';
 import type { StoredGroup } from '../lib/store';
 import { encodeShareFragment, exportJson, linkSizeVerdict } from '../lib/codec';
 import { ledgerCsv } from '../lib/csv';
 import { capabilityFragment } from '../lib/relay';
 import { useGroupStore } from '../stores/groupStore';
+import UnisimQr from './UnisimQr';
 import { btnDanger, btnGhost, btnPrimary, card } from './ui';
 
 export default function ShareView({ group, ledger }: { group: StoredGroup; ledger: EffectiveLedger }) {
@@ -88,8 +88,11 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
               <SizeMeter chars={link.length} verdict={verdict} />
             </div>
             {verdict === 'qr' && (
-              <div className="mt-3 inline-block rounded-xl bg-white p-3 dark:bg-slate-100">
-                <QRCodeSVG value={link} size={148} level="M" marginSize={0} />
+              <div className="mt-3">
+                <UnisimQr value={link} alt={`QR code holding the ${group.name} ledger — scan it to open this group`} />
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  Point a friend's camera at this and the whole ledger travels across — no link to paste.
+                </p>
               </div>
             )}
             {verdict === 'fragile' && (
@@ -136,8 +139,11 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
               </div>
             )}
             {relayLink && (
-              <div className="mt-3 inline-block rounded-xl bg-white p-3 dark:bg-slate-100">
-                <QRCodeSVG value={relayLink} size={148} level="M" marginSize={0} />
+              <div className="mt-3">
+                <UnisimQr value={relayLink} alt={`QR code holding the join link for ${group.name}`} />
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  Scanning this joins the group and hands over the key — same as sending the link, so treat it the same way.
+                </p>
               </div>
             )}
             <div className="mt-3">
