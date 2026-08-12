@@ -19,9 +19,9 @@ function shortDate(iso: string): string {
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function RailCard({ title, children }: { title: string; children: ReactNode }) {
+function RailCard({ title, children, className = '' }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <section className={card}>
+    <section className={`${card} ${className}`}>
       <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</h2>
       <div className="mt-3">{children}</div>
     </section>
@@ -100,6 +100,32 @@ function FoldedNote() {
 }
 
 // ---------------------------------------------------------------- group list
+
+/**
+ * The rail before there is anything to summarise.
+ *
+ * It holds the column open rather than letting the page reflow from one wide
+ * column to two the moment a first group exists — and it shows the actual
+ * headings with their values dashed out, so what arrives later is recognisably
+ * the thing that was promised. Dashed border: the same "this is a placeholder,
+ * not your data" signal the example-group banner uses.
+ */
+export function EmptyRail() {
+  return (
+    <RailCard title="Across every group" className="border-dashed">
+      <dl className="grid grid-cols-2 gap-3 opacity-45">
+        <Figure label="Groups" value="—" />
+        <Figure label="Still to settle" value="—" />
+        <Figure label="Total spent" value="—" />
+        <Figure label="Still owed" value="—" />
+      </dl>
+      <p className="mt-4 text-xs leading-snug text-slate-500 dark:text-slate-400">
+        Your running totals land here once there is something to add up: what has been spent, what is still owed between people,
+        and which groups are not square yet — each currency on its own line.
+      </p>
+    </RailCard>
+  );
+}
 
 export function PortfolioRail({ stats }: { stats: PortfolioStats }) {
   return (

@@ -6,7 +6,7 @@ import { effectiveLedger } from '../lib/events';
 import { formatAmount } from '../lib/money';
 import { groupStats, portfolioStats, type GroupStats } from '../lib/stats';
 import type { StoredGroup } from '../lib/store';
-import { PortfolioRail } from './StatsRail';
+import { EmptyRail, PortfolioRail } from './StatsRail';
 import { btnDanger, btnGhost, btnPrimary, card, inputCls, label } from './ui';
 
 export default function GroupList() {
@@ -145,13 +145,14 @@ export default function GroupList() {
       {/* Two columns at desktop widths, 2:1 — the groups and the way in on the
           left, the numbers they add up to on the right. Below `lg` it is one
           column and the rail falls under the list, where a summary belongs on a
-          phone. With no groups yet there is nothing to summarise, so the whole
-          grid collapses to the single "start here" panel. */}
-      {rows.length === 0 ? (
-        startPanel
-      ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
+          phone.
+
+          The grid is here from the first visit, with a placeholder in the rail
+          rather than nothing: a first group should fill the column that is
+          already there, not rearrange the page around itself. */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          {rows.length > 0 && (
             <ul className="grid gap-3 sm:grid-cols-2">
               {rows.map(({ group, stats }) => (
                 <li key={group.groupId}>
@@ -175,14 +176,14 @@ export default function GroupList() {
                 </li>
               ))}
             </ul>
-            {startPanel}
-          </div>
-
-          <aside className="space-y-4 self-start lg:sticky lg:top-6">
-            <PortfolioRail stats={portfolio} />
-          </aside>
+          )}
+          {startPanel}
         </div>
-      )}
+
+        <aside className="space-y-4 self-start lg:sticky lg:top-6">
+          {rows.length === 0 ? <EmptyRail /> : <PortfolioRail stats={portfolio} />}
+        </aside>
+      </div>
     </div>
   );
 }
