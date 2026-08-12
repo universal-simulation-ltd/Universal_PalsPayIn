@@ -21,7 +21,7 @@ import { useGroupStore } from './stores/groupStore';
 // `gutter` (index.css) is px-4 / sm:px-6 / lg:px-8 widened by the safe-area
 // insets, so on a notched phone held sideways the navbar keeps clear of the
 // notch along with everything else it lines up with.
-export const CONTAINER = 'gutter mx-auto w-full max-w-5xl'
+export const CONTAINER = 'gutter mx-auto w-full max-w-7xl'
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_PalsPayIn';
 
