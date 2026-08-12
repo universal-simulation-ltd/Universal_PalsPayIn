@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useFileDrop } from '@unisim/sdk';
 import { QRCodeSVG } from 'qrcode.react';
 import type { EffectiveLedger } from '../lib/events';
 import type { StoredGroup } from '../lib/store';
@@ -23,7 +24,20 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
   const [importError, setImportError] = useState<string | null>(null);
   const [confirmDisable, setConfirmDisable] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const importPicker = useFileDrop({
+    onFiles: (files) => {
+      const f = files[0];
+      if (!f) return;
+      setImportError(null);
+      void f
+        .text()
+        .then((t) => importFile(t))
+        .catch((err) => setImportError(err instanceof Error ? err.message : 'Could not read that file.'));
+    },
+    accept: 'application/json,.json',
+    multiple: false,
+    clickToBrowse: false,
+  });
 
   useEffect(() => {
     let alive = true;
@@ -156,7 +170,7 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
           <button type="button" className={btnGhost} onClick={() => download(`${slug}-ledger.json`, exportJson(group), 'application/json')}>
             Download ledger file
           </button>
-          <button type="button" className={btnGhost} onClick={() => fileInput.current?.click()}>
+          <button type="button" className={btnGhost} onClick={importPicker.open}>
             Import a ledger file…
           </button>
           <button type="button" className={btnGhost} onClick={() => download(`${slug}.csv`, ledgerCsv(ledger), 'text/csv')}>
@@ -170,22 +184,7 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
           The ledger file has no size ceiling and merges the same way links do. CSV is one row per entry with each person's share.
         </p>
         {importError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{importError}</p>}
-        <input
-          ref={fileInput}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = '';
-            if (!f) return;
-            setImportError(null);
-            void f
-              .text()
-              .then((t) => importFile(t))
-              .catch((err) => setImportError(err instanceof Error ? err.message : 'Could not read that file.'));
-          }}
-        />
+        <input {...importPicker.inputProps} className="hidden" />
       </section>
 
       {/* ------------------------------------------------ housekeeping */}

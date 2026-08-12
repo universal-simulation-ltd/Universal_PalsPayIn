@@ -8,6 +8,21 @@ import GroupView from './components/GroupView';
 import MergeReview from './components/MergeReview';
 import { useGroupStore } from './stores/groupStore';
 
+// The single page container. The navbar (via the SDK's `contentClassName`), the
+// page body and the footer all share it, so the suite switcher lines up with
+// the left edge of the page content — and the profile/changelog cluster with
+// its right edge — at every breakpoint.
+//
+// Without this the navbar falls back to the SDK's standalone default: a fixed
+// 1280px row with the profile cluster pinned 12px off the VIEWPORT edge. At
+// 1440px that put the bar at 80–1360 over content at 208–1232, overhanging it
+// by ~128px on each side. Universal PDF and Images are the pattern this copies.
+//
+// `gutter` (index.css) is px-4 / sm:px-6 / lg:px-8 widened by the safe-area
+// insets, so on a notched phone held sideways the navbar keeps clear of the
+// notch along with everything else it lines up with.
+export const CONTAINER = 'gutter mx-auto w-full max-w-5xl'
+
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_PalsPayIn';
 
 export default function App() {
@@ -25,6 +40,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-100 dark:bg-slate-950">
       <UniversalAppsNavBar
+        contentClassName={CONTAINER}
         product="palspayin"
         productLogo={<ProductLogo />}
         productHomeHref={import.meta.env.BASE_URL}
@@ -32,7 +48,7 @@ export default function App() {
         suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
       />
       <UsageTracker />
-      <main className="gutter mx-auto w-full max-w-5xl flex-1 py-6 sm:py-8">
+      <main className={`${CONTAINER} flex-1 py-6 sm:py-8`}>
         {importNotice && (
           <div className="no-print mb-4 flex items-start justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200">
             <p>{importNotice}</p>
@@ -45,7 +61,7 @@ export default function App() {
         {!loaded ? null : activeId ? <GroupView key={activeId} groupId={activeId} /> : <GroupList />}
       </main>
       <footer className="no-print border-t border-slate-200 bg-white py-4 dark:border-slate-800 dark:bg-slate-900">
-        <div className="gutter mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <div className={`${CONTAINER} flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400`}>
           <p>
             A shared-expense ledger. It records what is owed and what people say they sent —{' '}
             <strong className="font-semibold">it never moves money.</strong>

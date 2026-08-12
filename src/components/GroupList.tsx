@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { useFileDrop } from '@unisim/sdk';
 import { useGroupStore } from '../stores/groupStore';
 import { effectiveLedger } from '../lib/events';
 import { btnGhost, btnPrimary, card, inputCls, label } from './ui';
@@ -13,7 +14,12 @@ export default function GroupList() {
   const [members, setMembers] = useState('');
   const [creating, setCreating] = useState(groups.length === 0);
   const [importError, setImportError] = useState<string | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const importPicker = useFileDrop({
+    onFiles: (files) => { if (files[0]) void onFile(files[0]); },
+    accept: 'application/json,.json',
+    multiple: false,
+    clickToBrowse: false,
+  });
 
   const memberNames = members.split(/[,\n]/).map((m) => m.trim()).filter(Boolean);
   const canCreate = name.trim().length > 0 && memberNames.length >= 2;
@@ -73,7 +79,7 @@ export default function GroupList() {
             <button type="button" className={btnPrimary} onClick={() => setCreating(true)}>
               New group
             </button>
-            <button type="button" className={btnGhost} onClick={() => fileInput.current?.click()}>
+            <button type="button" className={btnGhost} onClick={importPicker.open}>
               Import a ledger file…
             </button>
             <p className="text-xs text-slate-500 dark:text-slate-400">Got a share link instead? Just open it — it lands here by itself.</p>
@@ -111,24 +117,16 @@ export default function GroupList() {
                   Cancel
                 </button>
               )}
-              <button type="button" className={btnGhost} onClick={() => fileInput.current?.click()}>
+              <button type="button" className={btnGhost} onClick={importPicker.open}>
                 Import a ledger file…
               </button>
             </div>
           </div>
         )}
         {importError && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{importError}</p>}
-        <input
-          ref={fileInput}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = ''; // same file re-picked must fire again
-            if (f) void onFile(f);
-          }}
-        />
+        {/* The hook clears the value after every pick, so the same ledger file
+            can be re-imported. */}
+        <input {...importPicker.inputProps} className="hidden" />
       </section>
     </div>
   );
