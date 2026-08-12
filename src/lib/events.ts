@@ -25,11 +25,44 @@ export interface BaseEvent {
  * the UI must not pretend the others do (§18.4).
  */
 export interface MemberHandles {
+  /** "Cash is fine." A method with nothing to store but the fact it is offered. */
+  cash?: boolean;
   paypal?: string; // paypal.me/<this>
   monzo?: string; // monzo.me/<this> — payer types the amount inside Monzo
   revolut?: string; // revolut.me/<this> — handle-only likewise
-  /** Free text for a bank transfer: sort code, account number, reference. Copied to the clipboard, never turned into a link that looks like it will do something. */
+  /** Free text for a bank transfer. The original shape, still read and still
+   * offered as "anything else" — an IBAN, a building-society roll number, a
+   * note — because the structured fields below are UK-shaped and the world is
+   * not. Copied to the clipboard, never turned into a link that looks like it
+   * will do something. */
   bank?: string;
+  /** The same details, in the fields a person actually reads them off a bank
+   * app screen. Every field optional: half a set of details is still useful to
+   * paste, and refusing to store it would just push it into the free-text box. */
+  bankAccount?: BankAccount;
+}
+
+export interface BankAccount {
+  name?: string; // account holder
+  sortCode?: string;
+  number?: string; // account number
+  reference?: string; // what to put in the payment reference
+}
+
+/** The methods a member can offer, in the order they are shown. */
+export const PAY_METHODS = ['cash', 'bank', 'paypal', 'monzo', 'revolut'] as const;
+export type PayMethod = (typeof PAY_METHODS)[number];
+
+/** Does this member offer this method? The tick-box state, read back from storage. */
+export function offersMethod(handles: MemberHandles | undefined, method: PayMethod): boolean {
+  if (!handles) return false;
+  if (method === 'cash') return handles.cash === true;
+  if (method === 'bank') return Boolean(handles.bank?.trim()) || bankAccountFilled(handles.bankAccount);
+  return Boolean(handles[method]?.trim());
+}
+
+export function bankAccountFilled(a: BankAccount | undefined): boolean {
+  return Boolean(a && (a.name?.trim() || a.sortCode?.trim() || a.number?.trim() || a.reference?.trim()));
 }
 
 export interface MemberEvent extends BaseEvent {

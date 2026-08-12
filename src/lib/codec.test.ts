@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   decodeLedger, decodeShareFragment, encodeLedger, encodeShareFragment,
-  exportJson, importJson, linkSizeVerdict, MEMBER_COLOURS,
+  exportJson, importJson, linkSizeVerdict, MEMBER_COLOURS, minimumVersion,
 } from './codec';
 import type { CompactEvent, ExpenseEvent, LedgerEvent, MemberEvent, PaymentEvent } from './events';
 
@@ -114,6 +114,55 @@ describe('binary codec', () => {
 
   it('refuses garbage', () => {
     expect(() => decodeLedger(new Uint8Array([1, 2, 3, 4]))).toThrow();
+  });
+
+  it('encodes at the oldest version that fits, so a v2 phone can still open an ordinary link', () => {
+    const log = fullLog();
+    expect(minimumVersion(log.events)).toBe(2);
+    expect(encodeLedger(log)[3]).toBe(2);
+
+    const cashy = { ...log, events: log.events.map((e) => (e.kind === 'member' ? { ...e, handles: { ...e.handles, cash: true } } : e)) };
+    expect(minimumVersion(cashy.events)).toBe(3);
+    expect(encodeLedger(cashy)[3]).toBe(3);
+  });
+
+  it('a member amend that adds structured details lifts the version too', () => {
+    const log = fullLog();
+    const m1 = log.events[0] as MemberEvent;
+    const amend: LedgerEvent = {
+      kind: 'amend', id: id(), author: 'dev1', at: 1_700_000_010_000, supersedes: m1.id,
+      body: { name: m1.name, colour: m1.colour, handles: { bankAccount: { sortCode: '04-00-04' } } },
+    };
+    expect(minimumVersion([...log.events, amend])).toBe(3);
+  });
+
+  it('roundtrips the cash tick and every structured bank field through v3', () => {
+    const log = fullLog();
+    const m1 = log.events[0] as MemberEvent;
+    m1.handles = {
+      cash: true,
+      paypal: 'sam-pays',
+      bank: 'IBAN GB00 XXXX 0000',
+      bankAccount: { name: 'S Smith', sortCode: '04-00-04', number: '12345678', reference: 'Weekend' },
+    };
+    expect(decodeLedger(encodeLedger(log))).toEqual(log);
+  });
+
+  it('keeps a partly-filled account partly filled — absent fields do not come back as empty strings', () => {
+    const log = fullLog();
+    const m1 = log.events[0] as MemberEvent;
+    m1.handles = { bankAccount: { number: '12345678' } };
+    const decoded = decodeLedger(encodeLedger(log)).events[0] as MemberEvent;
+    expect(decoded.handles).toEqual({ bankAccount: { number: '12345678' } });
+  });
+
+  it('a v3 ledger forced into v2 drops the new fields rather than corrupting the stream', () => {
+    const log = fullLog();
+    const m1 = log.events[0] as MemberEvent;
+    m1.handles = { cash: true, monzo: 'samm', bankAccount: { number: '12345678' } };
+    const decoded = decodeLedger(encodeLedger(log, { version: 2 })).events[0] as MemberEvent;
+    expect(decoded.handles).toEqual({ monzo: 'samm' }); // the rest is lost, but everything after it still reads
+    expect(decodeLedger(encodeLedger(log, { version: 2 })).events).toHaveLength(log.events.length);
   });
 });
 

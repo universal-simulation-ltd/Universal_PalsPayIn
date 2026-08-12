@@ -34,6 +34,8 @@ interface GroupState {
   addExpense: (fields: ExpenseFields) => Promise<void>;
   amendExpense: (originalId: EventId, fields: ExpenseFields) => Promise<void>;
   addPayment: (fields: PaymentFields) => Promise<void>;
+  /** Several payments as one append — "I paid everyone back" is one action, not N syncs. */
+  addPayments: (fields: PaymentFields[]) => Promise<void>;
   amendPayment: (originalId: EventId, fields: PaymentFields) => Promise<void>;
   voidEntry: (entryId: EventId) => Promise<void>;
   compactBefore: (cutoffDate: string) => Promise<number>;
@@ -194,6 +196,14 @@ export const useGroupStore = create<GroupState>((set, get) => {
 
     addPayment: async (fields) => {
       await append([{ kind: 'payment', ...base(), ...fields } as PaymentEvent]);
+    },
+
+    addPayments: async (list) => {
+      if (list.length === 0) return;
+      // Separate events, so each one can be edited or removed on its own
+      // later — paying the group back is a convenience at the form, never a
+      // new kind of entry the ledger has to understand.
+      await append(list.map((fields) => ({ kind: 'payment', ...base(), ...fields }) as PaymentEvent));
     },
 
     amendPayment: async (originalId, fields) => {

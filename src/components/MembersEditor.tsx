@@ -1,8 +1,22 @@
 import { useState } from 'react';
-import type { EventId, MemberEvent, MemberHandles } from '../lib/events';
+import type { BankAccount, EventId, MemberEvent, MemberHandles, PayMethod } from '../lib/events';
+import { PAY_METHODS, bankAccountFilled, offersMethod } from '../lib/events';
 import { cleanHandle } from '../lib/paylinks';
 import { useGroupStore } from '../stores/groupStore';
-import { btnGhost, btnPrimary, card, inputCls, label, MemberDot } from './ui';
+import { btnGhost, btnPrimary, card, checkboxCls, inputCls, label, MemberDot } from './ui';
+
+const METHOD_LABEL: Record<PayMethod, string> = {
+  cash: 'Cash',
+  bank: 'Bank transfer',
+  paypal: 'PayPal',
+  monzo: 'Monzo',
+  revolut: 'Revolut',
+};
+
+type Ticks = Record<PayMethod, boolean>;
+
+const ticksFor = (handles: MemberHandles | undefined): Ticks =>
+  Object.fromEntries(PAY_METHODS.map((m) => [m, offersMethod(handles, m)])) as Ticks;
 
 export default function MembersEditor({ members }: { members: MemberEvent[] }) {
   const addMember = useGroupStore((s) => s.addMember);
@@ -11,19 +25,36 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
   const [editing, setEditing] = useState<EventId | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draft, setDraft] = useState<MemberHandles>({});
+  const [account, setAccount] = useState<BankAccount>({});
+  const [ticks, setTicks] = useState<Ticks>(ticksFor(undefined));
 
   const startEdit = (m: MemberEvent) => {
     setEditing(m.id);
     setDraftName(m.name);
     setDraft({ ...m.handles });
+    setAccount({ ...m.handles?.bankAccount });
+    setTicks(ticksFor(m.handles));
   };
 
   const save = (m: MemberEvent) => {
+    // Only ticked methods are stored. Un-ticking is how you withdraw an offer,
+    // so it has to actually drop the details rather than leave them lying in
+    // the ledger where the settle-up message would still find them.
     const handles: MemberHandles = {};
-    if (draft.paypal && cleanHandle(draft.paypal)) handles.paypal = cleanHandle(draft.paypal);
-    if (draft.monzo && cleanHandle(draft.monzo)) handles.monzo = cleanHandle(draft.monzo);
-    if (draft.revolut && cleanHandle(draft.revolut)) handles.revolut = cleanHandle(draft.revolut);
-    if (draft.bank?.trim()) handles.bank = draft.bank.trim();
+    if (ticks.cash) handles.cash = true;
+    for (const k of ['paypal', 'monzo', 'revolut'] as const) {
+      const cleaned = ticks[k] && draft[k] ? cleanHandle(draft[k]) : '';
+      if (cleaned) handles[k] = cleaned;
+    }
+    if (ticks.bank) {
+      const trimmed: BankAccount = Object.fromEntries(
+        (Object.entries(account) as [keyof BankAccount, string | undefined][])
+          .map(([k, v]) => [k, v?.trim()])
+          .filter(([, v]) => v),
+      );
+      if (bankAccountFilled(trimmed)) handles.bankAccount = trimmed;
+      if (draft.bank?.trim()) handles.bank = draft.bank.trim();
+    }
     void amendMember(m.id, {
       name: draftName.trim() || m.name,
       colour: m.colour,
@@ -39,35 +70,83 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
         {members.map((m) => (
           <li key={m.id} className="text-sm text-slate-700 dark:text-slate-300">
             {editing === m.id ? (
-              <div className="space-y-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+              <div className="space-y-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
                 <div>
                   <label className={label}>Name</label>
                   <input className={`${inputCls} max-w-60`} value={draftName} onChange={(e) => setDraftName(e.target.value)} autoFocus />
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Optional ways to pay {draftName || m.name} — theirs to share, stored in this group's ledger like any other detail.
-                  Settling up will offer these to whoever owes them. Only PayPal links can carry the amount; the app still never
-                  moves money or learns whether a payment happened.
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div>
-                    <label className={label}>PayPal.me username</label>
-                    <input className={inputCls} placeholder="paypal.me/…" value={draft.paypal ?? ''} onChange={(e) => setDraft((d) => ({ ...d, paypal: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className={label}>Monzo.me username</label>
-                    <input className={inputCls} placeholder="monzo.me/…" value={draft.monzo ?? ''} onChange={(e) => setDraft((d) => ({ ...d, monzo: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className={label}>Revolut Revtag</label>
-                    <input className={inputCls} placeholder="revolut.me/…" value={draft.revolut ?? ''} onChange={(e) => setDraft((d) => ({ ...d, revolut: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className={label}>Bank details (free text)</label>
-                    <input className={inputCls} placeholder="Sort 00-00-00, acct 12345678, ref rent" value={draft.bank ?? ''} onChange={(e) => setDraft((d) => ({ ...d, bank: e.target.value }))} />
+
+                <div>
+                  <label className={label}>How can people pay {draftName || m.name}?</label>
+                  <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+                    Theirs to offer, stored in this group's ledger like any other detail. Whoever owes them gets the choice at
+                    settle-up time. Only PayPal links can carry the amount; the app still never moves money or learns whether a
+                    payment happened.
+                  </p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                    {PAY_METHODS.map((method) => (
+                      <label key={method} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          className={checkboxCls}
+                          checked={ticks[method]}
+                          onChange={(e) => setTicks((t) => ({ ...t, [method]: e.target.checked }))}
+                        />
+                        {METHOD_LABEL[method]}
+                      </label>
+                    ))}
                   </div>
                 </div>
-                <div className="flex gap-2">
+
+                {ticks.bank && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <label className={label}>Account name</label>
+                      <input className={inputCls} placeholder="J Smith" value={account.name ?? ''} onChange={(e) => setAccount((a) => ({ ...a, name: e.target.value }))} />
+                    </div>
+                    <div className="min-w-0">
+                      <label className={label}>Sort code</label>
+                      <input className={`${inputCls} tabular`} inputMode="numeric" placeholder="00-00-00" value={account.sortCode ?? ''} onChange={(e) => setAccount((a) => ({ ...a, sortCode: e.target.value }))} />
+                    </div>
+                    <div className="min-w-0">
+                      <label className={label}>Account number</label>
+                      <input className={`${inputCls} tabular`} inputMode="numeric" placeholder="12345678" value={account.number ?? ''} onChange={(e) => setAccount((a) => ({ ...a, number: e.target.value }))} />
+                    </div>
+                    <div className="min-w-0">
+                      <label className={label}>Reference to use</label>
+                      <input className={inputCls} placeholder="Weekend away" value={account.reference ?? ''} onChange={(e) => setAccount((a) => ({ ...a, reference: e.target.value }))} />
+                    </div>
+                    <div className="min-w-0 sm:col-span-2">
+                      <label className={label}>Anything else (IBAN, building society roll number…)</label>
+                      <input className={inputCls} value={draft.bank ?? ''} onChange={(e) => setDraft((d) => ({ ...d, bank: e.target.value }))} />
+                    </div>
+                  </div>
+                )}
+
+                {(['paypal', 'monzo', 'revolut'] as const).filter((k) => ticks[k]).length > 0 && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {ticks.paypal && (
+                      <div className="min-w-0">
+                        <label className={label}>PayPal.me username</label>
+                        <input className={inputCls} placeholder="paypal.me/…" value={draft.paypal ?? ''} onChange={(e) => setDraft((d) => ({ ...d, paypal: e.target.value }))} />
+                      </div>
+                    )}
+                    {ticks.monzo && (
+                      <div className="min-w-0">
+                        <label className={label}>Monzo.me username</label>
+                        <input className={inputCls} placeholder="monzo.me/…" value={draft.monzo ?? ''} onChange={(e) => setDraft((d) => ({ ...d, monzo: e.target.value }))} />
+                      </div>
+                    )}
+                    {ticks.revolut && (
+                      <div className="min-w-0">
+                        <label className={label}>Revolut Revtag</label>
+                        <input className={inputCls} placeholder="revolut.me/…" value={draft.revolut ?? ''} onChange={(e) => setDraft((d) => ({ ...d, revolut: e.target.value }))} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2">
                   <button type="button" className={btnPrimary} onClick={() => save(m)}>
                     Save
                   </button>
@@ -79,9 +158,9 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
             ) : (
               <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <MemberDot colour={m.colour} name={m.name} />
-                {m.handles && Object.keys(m.handles).length > 0 && (
+                {PAY_METHODS.some((k) => offersMethod(m.handles, k)) && (
                   <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                    {[m.handles.paypal && 'PayPal', m.handles.monzo && 'Monzo', m.handles.revolut && 'Revolut', m.handles.bank && 'bank'].filter(Boolean).join(' · ')}
+                    {PAY_METHODS.filter((k) => offersMethod(m.handles, k)).map((k) => METHOD_LABEL[k]).join(' · ')}
                   </span>
                 )}
                 <button

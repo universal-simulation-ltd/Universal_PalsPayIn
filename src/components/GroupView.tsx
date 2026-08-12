@@ -105,7 +105,7 @@ export default function GroupView({ groupId }: { groupId: string }) {
 
       {tab === 'entries' && <EntryList group={group} ledger={eff} />}
       {tab === 'balances' && <BalancesView ledger={eff} bal={bal} pairwise={pairwise} />}
-      {tab === 'settle' && <SettleView ledger={eff} bal={bal} pairwise={pairwise} />}
+      {tab === 'settle' && <SettleView ledger={eff} bal={bal} pairwise={pairwise} groupName={group.name} />}
       {tab === 'share' && <ShareView group={group} ledger={eff} />}
     </div>
   );

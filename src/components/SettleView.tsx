@@ -1,20 +1,24 @@
 import { useMemo, useState } from 'react';
 import type { BalancesResult, PairwiseDebt } from '../lib/balances';
 import type { EffectiveLedger, EventId } from '../lib/events';
+import { PAY_METHODS, offersMethod } from '../lib/events';
 import { formatAmount } from '../lib/money';
 import { payOptions } from '../lib/paylinks';
 import { chooseSettlePlan, type Transfer } from '../lib/settle';
+import { settlementMessage } from '../lib/summary';
 import PaymentForm from './PaymentForm';
-import { card, MemberDot } from './ui';
+import { card, checkboxCls, CopyButton, MemberDot, ScrollFade } from './ui';
 
 export default function SettleView({
   ledger,
   bal,
   pairwise,
+  groupName,
 }: {
   ledger: EffectiveLedger;
   bal: BalancesResult;
   pairwise: PairwiseDebt[];
+  groupName: string;
 }) {
   const [recording, setRecording] = useState<{ from: EventId; to: EventId; minor: number; currency: string } | null>(null);
   const [showUnconstrained, setShowUnconstrained] = useState(false);
@@ -25,9 +29,13 @@ export default function SettleView({
 
   if (choice.plan.length === 0) {
     return (
-      <section className={card}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">All square — there is nothing to settle.</p>
-      </section>
+      <div className="space-y-4">
+        <section className={card}>
+          <p className="text-sm text-slate-600 dark:text-slate-400">All square — there is nothing to settle.</p>
+        </section>
+        {/* Worth sending too: "we're square" is the message that ends the thread. */}
+        <ShareSummary groupName={groupName} ledger={ledger} bal={bal} plan={[]} />
+      </div>
     );
   }
 
@@ -80,6 +88,8 @@ export default function SettleView({
         </p>
       </section>
 
+      <ShareSummary groupName={groupName} ledger={ledger} bal={bal} plan={plan} />
+
       {recording && (
         <PaymentForm
           members={ledger.members}
@@ -88,6 +98,66 @@ export default function SettleView({
         />
       )}
     </div>
+  );
+}
+
+/**
+ * The message you paste into the group chat. Built from the same balances and
+ * the same plan that are on screen above it, so there is no second source of
+ * truth to drift — and shown in full before it is copied, because a button
+ * that puts text you have not read onto your clipboard and then into a group
+ * chat is a button nobody should trust.
+ */
+function ShareSummary({
+  groupName,
+  ledger,
+  bal,
+  plan,
+}: {
+  groupName: string;
+  ledger: EffectiveLedger;
+  bal: BalancesResult;
+  plan: Transfer[];
+}) {
+  const [includePayDetails, setIncludePayDetails] = useState(true);
+
+  const payeesWithDetails = useMemo(() => {
+    const payees = new Set(plan.map((t) => t.to));
+    return ledger.members.filter((m) => payees.has(m.id) && PAY_METHODS.some((k) => offersMethod(m.handles, k)));
+  }, [plan, ledger.members]);
+
+  const message = useMemo(
+    () => settlementMessage({ groupName, ledger, bal, plan, includePayDetails: includePayDetails && payeesWithDetails.length > 0 }),
+    [groupName, ledger, bal, plan, includePayDetails, payeesWithDetails.length],
+  );
+
+  return (
+    <section className={`${card} no-print`}>
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Send it to the group</h2>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        The state of play as plain text, ready to paste into the group chat. Read it before you send it — it is yours, not a
+        notification this app sends on your behalf.
+      </p>
+
+      {payeesWithDetails.length > 0 ? (
+        <label className="mt-3 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input type="checkbox" className={checkboxCls} checked={includePayDetails} onChange={(e) => setIncludePayDetails(e.target.checked)} />
+          Include how to pay {new Intl.ListFormat('en-GB').format(payeesWithDetails.map((m) => m.name))}
+        </label>
+      ) : (
+        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+          To offer cash or bank details in this message, tap the people count under the group name and add them there.
+        </p>
+      )}
+
+      <ScrollFade axis="y" className="mt-3 max-h-72 rounded-lg bg-slate-50 dark:bg-slate-800/60">
+        <pre className="p-3 font-sans text-xs whitespace-pre-wrap text-slate-700 dark:text-slate-200">{message}</pre>
+      </ScrollFade>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <CopyButton text={message} label="Copy the message" />
+      </div>
+    </section>
   );
 }
 

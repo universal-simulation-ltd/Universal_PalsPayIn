@@ -7,16 +7,22 @@
 // offers the JSON file once the link outgrows a QR.
 
 import type {
-  AmendEvent, CompactEvent, EventId, ExpenseEvent, Group, LedgerEvent,
+  AmendEvent, BankAccount, CompactEvent, EventId, ExpenseEvent, Group, LedgerEvent,
   MemberEvent, PaymentEvent, SplitSpec, VoidEvent,
 } from './events';
+import { bankAccountFilled } from './events';
 
 const MAGIC = [0x55, 0x50, 0x31]; // "UP1"
 // v1 → launch format. v2 (same day) → member bodies carry structured payment
 // handles (paypal/monzo/revolut/bank) instead of one generic handle string.
-// The decoder accepts both; the encoder writes CURRENT_VERSION (tests pin the
-// v1 path so it cannot rot).
-const FORMAT_VERSION = 2;
+// v3 → members can offer cash, and bank details can be structured fields
+// rather than one free-text line.
+//
+// The decoder accepts all three. The encoder writes the OLDEST version that
+// can carry this particular ledger without loss (`minimumVersion`), so a group
+// where nobody has ticked cash still produces a v2 link an un-updated phone can
+// open. Tests pin the v1 and v2 paths so neither can rot.
+const FORMAT_VERSION = 3;
 const OLDEST_READABLE_VERSION = 1;
 const EPOCH_2020 = Date.UTC(2020, 0, 1);
 
@@ -111,8 +117,26 @@ class Reader {
 
 // --------------------------------------------------------------------------- encode
 
+/**
+ * The oldest format version that carries these events without dropping
+ * anything. Encoding at the minimum keeps links readable by devices that have
+ * not picked up the new build yet — a v3 link on a v2 phone is an error
+ * message, and a share link that errors is a share link that failed.
+ */
+export function minimumVersion(events: LedgerEvent[]): number {
+  const needsV3 = (h: MemberEvent['handles']) => Boolean(h && (h.cash || bankAccountFilled(h.bankAccount)));
+  for (const e of events) {
+    if (e.kind === 'member' && needsV3(e.handles)) return 3;
+    if (e.kind === 'amend') {
+      const body = e.body as { handles?: MemberEvent['handles'] };
+      if (!('payer' in e.body) && !('from' in e.body) && needsV3(body.handles)) return 3;
+    }
+  }
+  return 2;
+}
+
 export function encodeLedger(group: Pick<Group, 'groupId' | 'name' | 'events'>, opts?: { version?: number }): Uint8Array {
-  const version = opts?.version ?? FORMAT_VERSION;
+  const version = opts?.version ?? minimumVersion(group.events);
   if (version < OLDEST_READABLE_VERSION || version > FORMAT_VERSION) throw new Error(`cannot encode format v${version}`);
   const w = new Writer();
   w.bytes(MAGIC);
@@ -246,6 +270,11 @@ function collectRefs(events: LedgerEvent[], memberIds: EventId[], authors: strin
 }
 
 const HANDLE_KEYS = ['paypal', 'monzo', 'revolut', 'bank'] as const;
+// v3 adds two bits above the four string handles: one flag for "takes cash"
+// (no payload) and one for a structured bank account (its own sub-flags).
+const CASH_BIT = 1 << 4;
+const BANK_ACCOUNT_BIT = 1 << 5;
+const BANK_ACCOUNT_KEYS = ['name', 'sortCode', 'number', 'reference'] as const;
 
 function encodeMemberBody(w: Writer, m: Pick<MemberEvent, 'name' | 'colour' | 'handles'>, version: number) {
   w.string(m.name);
@@ -266,9 +295,27 @@ function encodeMemberBody(w: Writer, m: Pick<MemberEvent, 'name' | 'colour' | 'h
   HANDLE_KEYS.forEach((k, i) => {
     if (m.handles?.[k]) flags |= 1 << i;
   });
+  // Below v3 the cash tick and the structured account have nowhere to ride.
+  // Dropping them is lossy, which is exactly why `minimumVersion` refuses to
+  // pick v2 for a ledger that has them.
+  if (version >= 3) {
+    if (m.handles?.cash) flags |= CASH_BIT;
+    if (bankAccountFilled(m.handles?.bankAccount)) flags |= BANK_ACCOUNT_BIT;
+  }
   w.byte(flags);
   for (const k of HANDLE_KEYS) {
     if (m.handles?.[k]) w.string(m.handles[k]!);
+  }
+  if (flags & BANK_ACCOUNT_BIT) {
+    const acct = m.handles!.bankAccount!;
+    let sub = 0;
+    BANK_ACCOUNT_KEYS.forEach((k, i) => {
+      if (acct[k]?.trim()) sub |= 1 << i;
+    });
+    w.byte(sub);
+    for (const k of BANK_ACCOUNT_KEYS) {
+      if (acct[k]?.trim()) w.string(acct[k]!);
+    }
   }
 }
 
@@ -282,10 +329,21 @@ function decodeMemberBody(r: Reader, version: number): Pick<MemberEvent, 'name' 
     return { name, colour, ...(legacy ? { handles: { paypal: legacy } } : {}) };
   }
   const flags = r.byte();
-  const handles: Record<string, string> = {};
+  const handles: MemberEvent['handles'] = {};
   HANDLE_KEYS.forEach((k, i) => {
     if (flags & (1 << i)) handles[k] = r.string();
   });
+  if (version >= 3) {
+    if (flags & CASH_BIT) handles.cash = true;
+    if (flags & BANK_ACCOUNT_BIT) {
+      const sub = r.byte();
+      const acct: BankAccount = {};
+      BANK_ACCOUNT_KEYS.forEach((k, i) => {
+        if (sub & (1 << i)) acct[k] = r.string();
+      });
+      handles.bankAccount = acct;
+    }
+  }
   return { name, colour, ...(Object.keys(handles).length ? { handles } : {}) };
 }
 
