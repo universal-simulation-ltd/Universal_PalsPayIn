@@ -89,7 +89,7 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
             </div>
             {verdict === 'qr' && (
               <div className="mt-3">
-                <UnisimQr value={link} alt={`QR code holding the ${group.name} ledger — scan it to open this group`} />
+                <UnisimQr value={link} fileName={`${slug}-qr`} alt={`QR code holding the ${group.name} ledger — scan it to open this group`} />
                 <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                   Point a friend's camera at this and the whole ledger travels across — no link to paste.
                 </p>
@@ -140,9 +140,10 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
             )}
             {relayLink && (
               <div className="mt-3">
-                <UnisimQr value={relayLink} alt={`QR code holding the join link for ${group.name}`} />
+                <UnisimQr value={relayLink} fileName={`${slug}-join-qr`} alt={`QR code holding the join link for ${group.name}`} />
                 <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                  Scanning this joins the group and hands over the key — same as sending the link, so treat it the same way.
+                  Scanning this joins the group and hands over the key — same as sending the link, so treat it the same way. A copy
+                  of this image is a copy of the key: don't leave it anywhere you wouldn't leave the link.
                 </p>
               </div>
             )}

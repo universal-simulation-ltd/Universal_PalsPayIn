@@ -3,6 +3,8 @@ import { useGroupStore } from '../stores/groupStore';
 import { effectiveLedger } from '../lib/events';
 import { balances, pairwiseDebts } from '../lib/balances';
 import { dueOccurrence, type RecurringTemplate } from '../lib/recurring';
+import { chooseSettlePlan } from '../lib/settle';
+import { groupStats } from '../lib/stats';
 import { formatAmount } from '../lib/money';
 import EntryList from './EntryList';
 import ExpenseForm from './ExpenseForm';
@@ -11,6 +13,7 @@ import BalancesView from './BalancesView';
 import SettleView from './SettleView';
 import ShareView from './ShareView';
 import MembersEditor from './MembersEditor';
+import { GroupRail } from './StatsRail';
 import { btnGhost, btnPrimary } from './ui';
 
 type Tab = 'entries' | 'balances' | 'settle' | 'share';
@@ -27,6 +30,11 @@ export default function GroupView({ groupId }: { groupId: string }) {
   const eff = useMemo(() => (group ? effectiveLedger(group.events) : null), [group]);
   const bal = useMemo(() => (eff ? balances(eff) : null), [eff]);
   const pairwise = useMemo(() => (eff ? pairwiseDebts(eff) : []), [eff]);
+  const stats = useMemo(() => (eff && bal ? groupStats(eff, bal) : null), [eff, bal]);
+  // Hoisted out of the Settle tab so the rail can show the transfer count from
+  // any tab. It is an exact search (bounded at EXACT_LIMIT members, ~44 ms
+  // worst case) and it only re-runs when the ledger itself changes.
+  const choice = useMemo(() => (bal ? chooseSettlePlan(bal, pairwise) : null), [bal, pairwise]);
 
   // Relay polling while the group is open. Sync is also triggered by every
   // local append, so this only catches OTHER devices' writes.
@@ -38,7 +46,7 @@ export default function GroupView({ groupId }: { groupId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, group?.relayEnabled]);
 
-  if (!group || !eff || !bal) return null;
+  if (!group || !eff || !bal || !stats || !choice) return null;
 
   const tabs: { id: Tab; title: string }[] = [
     { id: 'entries', title: 'Expenses' },
@@ -86,29 +94,41 @@ export default function GroupView({ groupId }: { groupId: string }) {
       {adding === 'expense' && <ExpenseForm members={eff.members} onClose={() => setAdding(null)} />}
       {adding === 'payment' && <PaymentForm members={eff.members} onClose={() => setAdding(null)} />}
 
-      {/* Two-up on a phone: four tabs in one row only fit by scrolling, and a
-          tab you have to discover by swiping is a tab nobody finds. */}
-      <nav className="no-print grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-white p-1 sm:grid-cols-4 dark:border-slate-800 dark:bg-slate-900">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`truncate rounded-lg px-3 py-2 text-sm font-medium transition ${
-              tab === t.id
-                ? 'bg-orange-700 text-white'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-            }`}
-          >
-            {t.title}
-          </button>
-        ))}
-      </nav>
+      {/* Two columns at desktop widths, 2:1 — the tabs and their contents on
+          the left, the group's numbers on the right, visible from every tab.
+          Below `lg` it stacks and the rail sits under the content. The forms
+          and banners above stay full width: an itemised split needs the room. */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          {/* Two-up on a phone: four tabs in one row only fit by scrolling, and a
+              tab you have to discover by swiping is a tab nobody finds. */}
+          <nav className="no-print grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-white p-1 sm:grid-cols-4 dark:border-slate-800 dark:bg-slate-900">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`truncate rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  tab === t.id
+                    ? 'bg-orange-700 text-white'
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                }`}
+              >
+                {t.title}
+              </button>
+            ))}
+          </nav>
 
-      {tab === 'entries' && <EntryList group={group} ledger={eff} />}
-      {tab === 'balances' && <BalancesView ledger={eff} bal={bal} pairwise={pairwise} />}
-      {tab === 'settle' && <SettleView ledger={eff} bal={bal} pairwise={pairwise} groupName={group.name} />}
-      {tab === 'share' && <ShareView group={group} ledger={eff} />}
+          {tab === 'entries' && <EntryList group={group} ledger={eff} />}
+          {tab === 'balances' && <BalancesView ledger={eff} bal={bal} pairwise={pairwise} />}
+          {tab === 'settle' && <SettleView ledger={eff} bal={bal} choice={choice} groupName={group.name} />}
+          {tab === 'share' && <ShareView group={group} ledger={eff} />}
+        </div>
+
+        <aside className="space-y-4 self-start lg:sticky lg:top-6">
+          <GroupRail stats={stats} transfers={choice.plan.length} onSettle={() => setTab('settle')} />
+        </aside>
+      </div>
     </div>
   );
 }

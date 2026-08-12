@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import type { BalancesResult, PairwiseDebt } from '../lib/balances';
+import type { BalancesResult } from '../lib/balances';
 import type { EffectiveLedger, EventId } from '../lib/events';
 import { PAY_METHODS, offersMethod } from '../lib/events';
 import { formatAmount } from '../lib/money';
 import { payOptions } from '../lib/paylinks';
-import { chooseSettlePlan, type Transfer } from '../lib/settle';
+import type { SettleChoice, Transfer } from '../lib/settle';
 import { settlementMessage } from '../lib/summary';
 import PaymentForm from './PaymentForm';
 import { card, checkboxCls, CopyButton, MemberDot, ScrollFade } from './ui';
@@ -12,18 +12,19 @@ import { card, checkboxCls, CopyButton, MemberDot, ScrollFade } from './ui';
 export default function SettleView({
   ledger,
   bal,
-  pairwise,
+  choice,
   groupName,
 }: {
   ledger: EffectiveLedger;
   bal: BalancesResult;
-  pairwise: PairwiseDebt[];
+  /** Computed by the parent — the summary rail shows the transfer count on
+   *  every tab, and the exact search is too expensive to run twice. */
+  choice: SettleChoice;
   groupName: string;
 }) {
   const [recording, setRecording] = useState<{ from: EventId; to: EventId; minor: number; currency: string } | null>(null);
   const [showUnconstrained, setShowUnconstrained] = useState(false);
 
-  const choice = useMemo(() => chooseSettlePlan(bal, pairwise), [bal, pairwise]);
   const nameOf = (id: EventId) => ledger.members.find((m) => m.id === id)?.name ?? 'someone';
   const colourOf = (id: EventId) => ledger.members.find((m) => m.id === id)?.colour ?? '#999';
 
