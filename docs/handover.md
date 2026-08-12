@@ -4,6 +4,30 @@ Written 2026-08-10, the session that built the app (scoped earlier in the
 suite docs as "next products" §18; Phase 1 + Phase 2 shipped together, and
 the owner kept the PalsPayIn name over the rename recommendation).
 
+## 0.1 "Load an example" (2026-08-12)
+
+`src/lib/example.ts` builds a sample group on demand — Sam, Alex and Jo, a £30
+booking fee split **evenly**, a £93.38 dinner split **item by item** with 12.5%
+service prorated over the subtotals, and a £20 payment claim so Balances and
+Settle up are not empty. Offered on the group list and under the create form.
+Owner ask: a template showing "a meal split between three people unevenly, then
+a reservation fee split equally".
+
+- It is an **ordinary group**: real events in IndexedDB, editable, shareable,
+  deletable. Nothing in `effectiveLedger`, the codec or the relay knows about it.
+- The `example` flag is on **`StoredGroup`, not `Group`** — `Group` is what gets
+  serialised into links, files and the relay, so a copy someone else imports is
+  just a group. Reuse that seam for any other local-only per-group state.
+- **The member stamps step a second apart on purpose.** `effectiveLedger` sorts
+  members by `(at, author, id)`; events written in the same second share `at`
+  and `author`, so the tie-break is a random id. `createGroup` writes all its
+  members in one pass, which is why a real new group lists its names shuffled.
+- **Only cash is offered as a pay method.** A sample `paypal.me/...` handle
+  would resolve to a real stranger's account, and §18.4 is that handles come
+  from the member. `src/lib/example.test.ts` pins the shares and the resulting
+  balances to the penny, so a change to `allocate` or the itemised path that
+  quietly moves a rounding penny fails there.
+
 ## 0. Phase 3 (added later the same day)
 
 Pay-them deep links (member `handles` in the ledger — codec **v2**, v1 links

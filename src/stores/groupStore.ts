@@ -4,6 +4,7 @@ import {
   type DuplicateSuspicion, type EventId, type ExpenseEvent, type LedgerEvent, type MemberEvent, type MemberHandles, type PaymentEvent, type SplitSpec,
 } from '../lib/events';
 import { buildCompact, pruneCompacted } from '../lib/compact';
+import { buildExampleGroup } from '../lib/example';
 import { decodeShareFragment, importJson, MEMBER_COLOURS } from '../lib/codec';
 import { deleteRelayGroup, generateRelayKey, parseCapabilityFragment, syncWithRelay } from '../lib/relay';
 import type { RecurringTemplate } from '../lib/recurring';
@@ -27,6 +28,8 @@ interface GroupState {
   dismissNotice: () => void;
 
   createGroup: (name: string, memberNames: string[]) => Promise<string>;
+  /** Add (or re-open) the built-in sample group — a worked example to copy. */
+  loadExample: () => Promise<string>;
   removeGroup: (groupId: string) => Promise<void>;
 
   addMember: (name: string) => Promise<void>;
@@ -169,6 +172,20 @@ export const useGroupStore = create<GroupState>((set, get) => {
       await saveGroup(group);
       set((s) => ({ groups: [group, ...s.groups], activeId: groupId }));
       return groupId;
+    },
+
+    loadExample: async () => {
+      // One example at a time: a second tap re-opens the one already there
+      // rather than stacking up identical Sams and Alexes.
+      const existing = get().groups.find((g) => g.example);
+      if (existing) {
+        set({ activeId: existing.groupId });
+        return existing.groupId;
+      }
+      const group = buildExampleGroup();
+      await saveGroup(group);
+      set((s) => ({ groups: [group, ...s.groups], activeId: group.groupId }));
+      return group.groupId;
     },
 
     removeGroup: async (groupId) => {

@@ -9,6 +9,7 @@ export default function GroupList() {
   const open = useGroupStore((s) => s.open);
   const createGroup = useGroupStore((s) => s.createGroup);
   const importFile = useGroupStore((s) => s.importFile);
+  const loadExample = useGroupStore((s) => s.loadExample);
 
   const [name, setName] = useState('');
   const [members, setMembers] = useState('');
@@ -82,6 +83,9 @@ export default function GroupList() {
             <button type="button" className={btnGhost} onClick={importPicker.open}>
               Import a ledger file…
             </button>
+            <button type="button" className={btnGhost} onClick={() => void loadExample()}>
+              Load an example
+            </button>
             <p className="text-xs text-slate-500 dark:text-slate-400">Got a share link instead? Just open it — it lands here by itself.</p>
           </div>
         ) : (
@@ -121,6 +125,17 @@ export default function GroupList() {
                 Import a ledger file…
               </button>
             </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Not sure how a split should look?{' '}
+              <button
+                type="button"
+                onClick={() => void loadExample()}
+                className="font-semibold text-orange-700 underline underline-offset-2 hover:text-orange-600 dark:text-orange-400"
+              >
+                Load an example
+              </button>{' '}
+              — a worked dinner-and-booking weekend for three you can poke at, then delete.
+            </p>
           </div>
         )}
         {importError && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{importError}</p>}

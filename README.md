@@ -41,6 +41,10 @@ Live at **[opensource.unisim.co.uk/palspayin](https://opensource.unisim.co.uk/pa
   is unrecoverable — that's the deal, stated in the app.
 - **PWA, offline, IndexedDB.** The ledger is arithmetic in your browser; only
   the optional sync needs a network.
+- **A worked example, one tap in.** *Load an example* drops in a weekend for
+  three: a dinner split item by item (everyone pays for what they ate, and the
+  service charge follows those amounts) and a booking fee split evenly. It is
+  an ordinary group — edit it, share it, or delete it when you've got the idea.
 
 ## What it deliberately cannot do
 

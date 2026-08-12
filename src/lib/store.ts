@@ -15,6 +15,12 @@ export interface StoredGroup extends Group {
   relayCursor?: number;
   /** Monthly nudge templates — THIS DEVICE ONLY, deliberately not in the event log (see lib/recurring.ts). */
   recurring?: RecurringTemplate[];
+  /**
+   * The built-in sample group (lib/example.ts). A local UI hint only — it is
+   * not part of `Group`, so it never reaches a share link, an export or the
+   * relay, and a copy someone else imports is just a normal group.
+   */
+  example?: boolean;
   createdAt: number;
   updatedAt: number;
 }

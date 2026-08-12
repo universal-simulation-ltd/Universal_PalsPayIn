@@ -77,6 +77,8 @@ export default function GroupView({ groupId }: { groupId: string }) {
         </div>
       )}
 
+      {group.example && <ExampleBanner groupId={group.groupId} />}
+
       {showMembers && <MembersEditor members={eff.members} />}
 
       <RecurringNudges />
@@ -107,6 +109,31 @@ export default function GroupView({ groupId }: { groupId: string }) {
       {tab === 'balances' && <BalancesView ledger={eff} bal={bal} pairwise={pairwise} />}
       {tab === 'settle' && <SettleView ledger={eff} bal={bal} pairwise={pairwise} groupName={group.name} />}
       {tab === 'share' && <ShareView group={group} ledger={eff} />}
+    </div>
+  );
+}
+
+/**
+ * The sample group says so on its face — an example nobody realises is an
+ * example is just confusing data, and the way out has to be one tap, not a
+ * hunt through the Share tab.
+ */
+function ExampleBanner({ groupId }: { groupId: string }) {
+  const removeGroup = useGroupStore((s) => s.removeGroup);
+  return (
+    <div className="no-print flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-300 border-dashed bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
+      <p className="max-w-3xl">
+        <strong className="font-semibold">This is an example</strong> — Sam, Alex and Jo away for the weekend. The dinner is split{' '}
+        <em>item by item</em>, so everyone pays for what they ate and the service charge follows those amounts; the reservation fee is
+        split <em>evenly</em>, because that one really is the same for everybody. Change anything you like, or bin it and start your own.
+      </p>
+      <button
+        type="button"
+        onClick={() => void removeGroup(groupId)}
+        className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-white dark:border-slate-700 dark:hover:bg-slate-800"
+      >
+        Delete example
+      </button>
     </div>
   );
 }
