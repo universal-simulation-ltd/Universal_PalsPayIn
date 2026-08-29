@@ -32,9 +32,15 @@ export default function ProductLogo() {
     >
       <style>{CSS}</style>
       <svg viewBox="0 0 64 64" className="h-6 w-6" aria-hidden="true">
-        <rect x="0" y="0" width="64" height="64" rx="14" fill="#0f172a" />
-        <path d="M32 11 L27.8 20.4 L36 27.6 L27.8 36.4 L36 43.6 L32 53 A21 21 0 0 1 32 11 Z" fill="#fe8c01" className="uam-palspayin-halfL" />
-        <path d="M32 11 L27.8 20.4 L36 27.6 L27.8 36.4 L36 43.6 L32 53 A21 21 0 0 0 32 11 Z" opacity={0.55} fill="#fe8c01" className="uam-palspayin-halfR" />
+        <defs>
+          <linearGradient id="uam-nav-palspayin-tile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#fe8c01" />
+            <stop offset="1" stopColor="#e05504" />
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" rx="14" fill="url(#uam-nav-palspayin-tile)" />
+        <path d="M32 11 L27.8 20.4 L36 27.6 L27.8 36.4 L36 43.6 L32 53 A21 21 0 0 1 32 11 Z" fill="#ffffff" className="uam-palspayin-halfL" />
+        <path d="M32 11 L27.8 20.4 L36 27.6 L27.8 36.4 L36 43.6 L32 53 A21 21 0 0 0 32 11 Z" opacity={0.55} fill="#ffffff" className="uam-palspayin-halfR" />
       </svg>
     </span>
   )
