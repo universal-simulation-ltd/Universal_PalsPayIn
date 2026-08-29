@@ -1,3 +1,4 @@
+import { AdvancedMenu } from '@unisim/sdk'
 import { useGroupStore } from '../../stores/groupStore';
 import { useThemeStore, type ThemePref } from '../../stores/themeStore';
 
@@ -30,6 +31,19 @@ export default function AppMenu() {
       {THEMES.map((t) => (
         <MenuRow key={t.pref} glyph={t.glyph} label={t.label} selected={pref === t.pref} onClick={() => setPref(t.pref)} />
       ))}
+
+      {/* Advanced — the SDK's own category, so every app in the suite has one in
+          the same place, and whatever goes in it next is one change rather than
+          nineteen. "About this app" is always its last row. */}
+      <AdvancedMenu
+        about={{
+          repo:    'https://github.com/universal-simulation-ltd/Universal_PalsPayIn',
+          subject: 'Your ledger',
+          except:  'sharing it through the end-to-end encrypted relay',
+          headline: 'Other bill splitters keep your spending on their servers, tied to an account.',
+          version: __APP_VERSION__,
+        }}
+      />
     </>
   );
 }
