@@ -104,4 +104,4 @@ automatically. Every device keeps a complete local copy regardless.
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE).
+[AGPL-3.0-or-later](LICENSE), with an added permission for app-store distribution.
