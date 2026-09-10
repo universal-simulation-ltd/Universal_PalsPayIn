@@ -1,48 +1,11 @@
-import { create } from 'zustand';
+import { createThemeStore, type ThemePref } from '@unisim/sdk';
 
-// Light mode is the DEFAULT until the user explicitly chooses otherwise —
-// 'system' is an explicit choice here, never the starting point (suite rule,
-// Docs_UNI_SIM/landmines.md → Standing policies).
+// The light/dark/system preference. The store itself lives in @unisim/sdk
+// (createThemeStore, since 0.140.0) — this file only names the key. It opens
+// LIGHT and stays light until the user chooses otherwise (the suite rule).
+//
+// ⚠️ The key is every user's saved choice. Renaming it silently resets them all
+// to light.
+export type { ThemePref };
 
-export type ThemePref = 'light' | 'dark' | 'system';
-
-const STORAGE_KEY = 'unisim-palspayin-theme';
-
-function load(): ThemePref {
-  const v = localStorage.getItem(STORAGE_KEY);
-  return v === 'dark' || v === 'system' ? v : 'light';
-}
-
-function isDark(pref: ThemePref): boolean {
-  if (pref === 'dark') return true;
-  if (pref === 'light') return false;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
-}
-
-function apply(pref: ThemePref) {
-  const dark = isDark(pref);
-  document.documentElement.classList.toggle('dark', dark);
-  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-}
-
-interface ThemeState {
-  pref: ThemePref;
-  setPref: (pref: ThemePref) => void;
-}
-
-export const useThemeStore = create<ThemeState>((set) => {
-  const initial = load();
-  apply(initial);
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    const { pref } = useThemeStore.getState();
-    if (pref === 'system') apply(pref);
-  });
-  return {
-    pref: initial,
-    setPref: (pref) => {
-      localStorage.setItem(STORAGE_KEY, pref);
-      apply(pref);
-      set({ pref });
-    },
-  };
-});
+export const useThemeStore = createThemeStore('unisim-palspayin-theme');

@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { UniversalAppsNavBar, UpdateNotice } from '@unisim/sdk';
-import UsageTracker from './UsageTracker';
+// <UsageTracker /> sends one "session.opened" row for a signed-in visitor. No
+// event may carry ledger content: no amounts, no names, no group ids.
+import { UsageTracker } from '@unisim/sdk';
 import ProductLogo from './components/Header/ProductLogo';
 import AppMenu from './components/Header/AppMenu';
 import GroupList from './components/GroupList';
