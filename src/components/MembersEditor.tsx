@@ -168,7 +168,7 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
                   className="text-xs font-medium text-slate-400 hover:text-slate-600 hover:underline dark:hover:text-slate-300"
                   onClick={() => startEdit(m)}
                 >
-                  edit
+                  tune
                 </button>
               </span>
             )}

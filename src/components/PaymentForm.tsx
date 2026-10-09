@@ -78,7 +78,7 @@ export default function PaymentForm({
   return (
     <section className={`${card} no-print space-y-4`}>
       <div>
-        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{editing ? 'Edit payment' : 'Record a payment'}</h2>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{editing ? 'Tune payment' : 'Record a payment'}</h2>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           This records that somebody <em>says</em> money was sent — in cash, by bank transfer, however. The app can't confirm it and
           won't pretend to; it never moves money itself.

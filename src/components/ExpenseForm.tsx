@@ -166,7 +166,7 @@ export default function ExpenseForm({
 
   return (
     <section className={`${card} no-print space-y-4`}>
-      <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{editing ? 'Edit expense' : 'Add an expense'}</h2>
+      <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{editing ? 'Tune expense' : 'Add an expense'}</h2>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="min-w-0">
