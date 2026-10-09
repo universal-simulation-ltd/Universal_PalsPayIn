@@ -96,7 +96,7 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
                 </button>
               )}
               <button type="button" className="font-medium text-slate-500 hover:underline dark:text-slate-400" onClick={() => setEditingId(e.id)}>
-                Tune
+                Fine-tune
               </button>
               {confirmVoid === e.id ? (
                 <span className="inline-flex gap-2">
