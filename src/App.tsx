@@ -9,6 +9,10 @@ import GroupList from './components/GroupList';
 import GroupView from './components/GroupView';
 import MergeReview from './components/MergeReview';
 import { useGroupStore } from './stores/groupStore';
+// PalsPayIn DOES have a dark mode (class-driven `dark:` styles, see index.css).
+// Without the store, Tune this app said "PalsPayIn is always light" while the
+// Actions menu offered Light / Dark / Match my device.
+import { useThemeStore } from './stores/themeStore';
 
 // The single page container. The navbar (via the SDK's `contentClassName`), the
 // page body and the footer all share it, so the suite switcher lines up with
@@ -47,6 +51,7 @@ export default function App() {
         productLogo={<ProductLogo />}
         productHomeHref={import.meta.env.BASE_URL}
         actions={<AppMenu />}
+        themeStore={useThemeStore}
         suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
       />
       {/* Renders nothing until this tab is genuinely running superseded code.

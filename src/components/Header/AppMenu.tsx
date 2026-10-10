@@ -32,9 +32,14 @@ export default function AppMenu() {
     <>
       <MenuLabel>Groups</MenuLabel>
       <MenuRow glyph="👥" label="All groups" onClick={() => open(null)} disabled={activeId === null} />
+      {/* The same store as the Colour scheme row in Tune this app (App.tsx
+          passes `themeStore` to the navbar), so the two always agree. */}
       <MenuLabel>Appearance</MenuLabel>
       {THEMES.map((t) => (
-        <MenuRow key={t.pref} glyph={t.glyph} label={t.label} selected={pref === t.pref} onClick={() => setPref(t.pref)} />
+        // ⚠️ keepMenuOpen: since SDK 0.183 a menu row closes the menu by
+        // default. A theme row's whole effect is the ✓ moving and the page
+        // re-colouring behind the menu, so it stays open to show both.
+        <MenuRow key={t.pref} glyph={t.glyph} label={t.label} selected={pref === t.pref} onClick={() => setPref(t.pref)} keepMenuOpen />
       ))}
 
       {/* Advanced — the SDK's own category, so every app in the suite has one in
@@ -78,17 +83,20 @@ function MenuRow({
   onClick,
   selected = false,
   disabled = false,
+  keepMenuOpen = false,
 }: {
   glyph: string;
   label: string;
   onClick: () => void;
   selected?: boolean;
   disabled?: boolean;
+  keepMenuOpen?: boolean;
 }) {
   return (
     <button
       type="button"
       role="menuitem"
+      data-keep-menu-open={keepMenuOpen ? '' : undefined}
       onClick={onClick}
       disabled={disabled}
       style={{
