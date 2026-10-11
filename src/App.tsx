@@ -10,8 +10,8 @@ import GroupView from './components/GroupView';
 import MergeReview from './components/MergeReview';
 import { useGroupStore } from './stores/groupStore';
 // PalsPayIn DOES have a dark mode (class-driven `dark:` styles, see index.css).
-// Without the store, Tune this app said "PalsPayIn is always light" while the
-// Actions menu offered Light / Dark / Match my device.
+// Tune this app's Colour scheme row is the only place to choose it, bound to
+// this store; without it Tune this app said "PalsPayIn is always light".
 import { useThemeStore } from './stores/themeStore';
 
 // The single page container. The navbar (via the SDK's `contentClassName`), the
