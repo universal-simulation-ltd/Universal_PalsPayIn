@@ -102,6 +102,19 @@ join link's fragment and never reaches us. Deleting the synced copy is one
 request away in the app, and relay data idle for 12 months is deleted
 automatically. Every device keeps a complete local copy regardless.
 
+What else reaches a server, and nothing more:
+
+- **The relay's rate limit** counts requests per IP address for one minute, in
+  the Worker's memory only; it is never stored. Request logging (Workers
+  observability) is switched off.
+- **The suite user count** (`@unisim/sdk` presence): your browser keeps a
+  random install id, not tied to you or an account, and sends it with the kind
+  of device (web, phone or computer) to UNI·SIM's Supabase every 45 seconds
+  while the app is open and on screen. No ledger content, names, amounts or
+  group ids.
+- There is no sign-in and no usage tracking: the navbar's account menu is off
+  (`noAccounts`).
+
 ## Licence
 
 [AGPL-3.0-or-later](LICENSE), with an added permission for app-store distribution.

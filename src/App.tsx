@@ -1,8 +1,5 @@
 import { useEffect } from 'react';
 import { UniversalAppsNavBar, UpdateNotice } from '@unisim/sdk';
-// <UsageTracker /> sends one "session.opened" row for a signed-in visitor. No
-// event may carry ledger content: no amounts, no names, no group ids.
-import { UsageTracker } from '@unisim/sdk';
 import ProductLogo from './components/Header/ProductLogo';
 import AppMenu from './components/Header/AppMenu';
 import GroupList from './components/GroupList';
@@ -60,7 +57,6 @@ export default function App() {
       <div className={`${CONTAINER} pt-4`}>
         <UpdateNotice />
       </div>
-      <UsageTracker />
       <main className={`${CONTAINER} flex-1 py-6 sm:py-8`}>
         {importNotice && (
           <div className="no-print mb-4 flex items-start justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200">
