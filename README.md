@@ -107,13 +107,9 @@ What else reaches a server, and nothing more:
 - **The relay's rate limit** counts requests per IP address for one minute, in
   the Worker's memory only; it is never stored. Request logging (Workers
   observability) is switched off.
-- **The suite user count** (`@unisim/sdk` presence): your browser keeps a
-  random install id, not tied to you or an account, and sends it with the kind
-  of device (web, phone or computer) to UNI·SIM's Supabase every 45 seconds
-  while the app is open and on screen. No ledger content, names, amounts or
-  group ids.
-- There is no sign-in and no usage tracking: the navbar's account menu is off
-  (`noAccounts`).
+- There is no sign-in, no usage tracking and no user count: the navbar's
+  account menu is off (`noAccounts`), which also keeps `@unisim/sdk`'s
+  anonymous daily open count off.
 
 ## Licence
 
