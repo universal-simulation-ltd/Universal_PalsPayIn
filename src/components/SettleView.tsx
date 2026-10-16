@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import type { BalancesResult } from '../lib/balances';
 import type { EffectiveLedger, EventId } from '../lib/events';
 import { PAY_METHODS, offersMethod } from '../lib/events';
@@ -183,6 +183,7 @@ function TransferRow({
   onRecord: () => void;
 }) {
   const [showPay, setShowPay] = useState(false);
+  const payId = useId();
   const [fired, setFired] = useState(false);
   const payee = ledger.members.find((m) => m.id === t.to);
   const options = payOptions(payee?.handles, t.minor, t.currency);
@@ -201,6 +202,8 @@ function TransferRow({
               type="button"
               className="no-print rounded-md bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800 hover:bg-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:hover:bg-orange-900/60"
               onClick={() => setShowPay((v) => !v)}
+              aria-expanded={showPay}
+              aria-controls={payId}
             >
               Pay {nameOf(t.to)} {showPay ? '▴' : '▾'}
             </button>
@@ -215,7 +218,7 @@ function TransferRow({
         </span>
       </div>
       {showPay && (
-        <div className="no-print mt-2 space-y-1.5 border-t border-slate-200 pt-2 dark:border-slate-700">
+        <div id={payId} className="no-print mt-2 space-y-1.5 border-t border-slate-200 pt-2 dark:border-slate-700">
           {options.map((o) => (
             <div key={o.kind} className="flex flex-wrap items-center gap-2">
               <button

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useGroupStore } from '../stores/groupStore';
 import { effectiveLedger } from '../lib/events';
 import { balances, pairwiseDebts } from '../lib/balances';
@@ -26,6 +26,7 @@ export default function GroupView({ groupId }: { groupId: string }) {
   const [tab, setTab] = useState<Tab>('entries');
   const [adding, setAdding] = useState<'expense' | 'payment' | null>(null);
   const [showMembers, setShowMembers] = useState(false);
+  const membersId = useId();
 
   const eff = useMemo(() => (group ? effectiveLedger(group.events) : null), [group]);
   const bal = useMemo(() => (eff ? balances(eff) : null), [eff]);
@@ -63,6 +64,8 @@ export default function GroupView({ groupId }: { groupId: string }) {
           <button
             type="button"
             onClick={() => setShowMembers((v) => !v)}
+            aria-expanded={showMembers}
+            aria-controls={membersId}
             className="mt-0.5 text-xs font-medium text-slate-500 underline-offset-2 hover:underline dark:text-slate-400"
           >
             {eff.members.length} people {showMembers ? '▴' : '▾'}
@@ -87,7 +90,11 @@ export default function GroupView({ groupId }: { groupId: string }) {
 
       {group.example && <ExampleBanner groupId={group.groupId} />}
 
-      {showMembers && <MembersEditor members={eff.members} />}
+      {showMembers && (
+        <div id={membersId}>
+          <MembersEditor members={eff.members} />
+        </div>
+      )}
 
       <RecurringNudges />
 

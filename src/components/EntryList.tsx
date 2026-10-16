@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useFileDrop } from '@unisim/sdk';
 import type { EffectiveLedger, EventId, ExpenseEvent, PaymentEvent } from '../lib/events';
 import { deletePhoto, downscalePhoto, loadPhoto, savePhoto, type StoredGroup } from '../lib/store';
@@ -14,6 +14,7 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
   const [editingId, setEditingId] = useState<EventId | null>(null);
   const [expandedId, setExpandedId] = useState<EventId | null>(null);
   const [confirmVoid, setConfirmVoid] = useState<EventId | null>(null);
+  const foldId = useId();
 
   const nameOf = (id: EventId) => ledger.members.find((m) => m.id === id)?.name ?? 'someone';
   const memberOf = (id: EventId) => ledger.members.find((m) => m.id === id);
@@ -73,11 +74,11 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
             {conflict && (
               <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 ✎ Edited on two devices at once — showing the later edit.{' '}
-                <button type="button" className="font-semibold underline underline-offset-2" onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}>
+                <button type="button" className="font-semibold underline underline-offset-2" onClick={() => setExpandedId(expandedId === e.id ? null : e.id)} aria-expanded={expandedId === e.id} aria-controls={`${foldId}-other-${e.id}`}>
                   {expandedId === e.id ? 'Hide' : 'Show'} the other version
                 </button>
                 {expandedId === e.id && (
-                  <ul className="mt-1 list-disc pl-4">
+                  <ul id={`${foldId}-other-${e.id}`} className="mt-1 list-disc pl-4">
                     {conflict.slice(0, -1).map((a) => (
                       <li key={a.id}>
                         {'description' in a.body ? `"${(a.body as { description?: string }).description}"` : 'edit'}
@@ -91,7 +92,7 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
 
             <div className="no-print mt-2 flex gap-3 text-xs">
               {e.kind === 'expense' && (
-                <button type="button" className="font-medium text-slate-500 hover:underline dark:text-slate-400" onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}>
+                <button type="button" className="font-medium text-slate-500 hover:underline dark:text-slate-400" onClick={() => setExpandedId(expandedId === e.id ? null : e.id)} aria-expanded={expandedId === e.id} aria-controls={`${foldId}-shares-${e.id}`}>
                   {expandedId === e.id ? 'Hide shares' : 'Who owes what?'}
                 </button>
               )}
@@ -122,18 +123,21 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
               )}
             </div>
 
-            {expandedId === e.id && e.kind === 'expense' && !conflict && (
-              <ul className="mt-2 grid gap-1 text-xs text-slate-600 sm:grid-cols-2 dark:text-slate-300">
-                {[...computeShares(e as ExpenseEvent)].map(([member, share]) => (
-                  <li key={member} className="flex justify-between gap-2 rounded bg-slate-50 px-2 py-1 dark:bg-slate-800/60">
-                    <MemberDot colour={memberOf(member)?.colour ?? '#999'} name={nameOf(member)} />
-                    <span className="tabular">{formatAmount(share, e.currency)}</span>
-                  </li>
-                ))}
-              </ul>
+            {expandedId === e.id && e.kind === 'expense' && (
+              <div id={`${foldId}-shares-${e.id}`}>
+                {!conflict && (
+                  <ul className="mt-2 grid gap-1 text-xs text-slate-600 sm:grid-cols-2 dark:text-slate-300">
+                    {[...computeShares(e as ExpenseEvent)].map(([member, share]) => (
+                      <li key={member} className="flex justify-between gap-2 rounded bg-slate-50 px-2 py-1 dark:bg-slate-800/60">
+                        <MemberDot colour={memberOf(member)?.colour ?? '#999'} name={nameOf(member)} />
+                        <span className="tabular">{formatAmount(share, e.currency)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <ReceiptPhoto groupId={group.groupId} entryId={e.id} />
+              </div>
             )}
-
-            {expandedId === e.id && e.kind === 'expense' && <ReceiptPhoto groupId={group.groupId} entryId={e.id} />}
           </article>
         );
       })}

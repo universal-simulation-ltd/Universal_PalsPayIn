@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRevealOnOpen } from '@unisim/sdk';
 import type { EventId, MemberEvent, PaymentEvent } from '../lib/events';
 import { allocate } from '../lib/allocate';
 import { COMMON_CURRENCIES, formatAmount, parseAmount, currencyExponent } from '../lib/money';
@@ -27,6 +28,9 @@ export default function PaymentForm({
   prefill?: { from: EventId; to: EventId; minor: number; currency: string };
   onClose: () => void;
 }) {
+  // Opened by Record a payment, Fine-tune or They've sent it: scroll the whole
+  // form on screen.
+  const revealRef = useRevealOnOpen<HTMLElement>();
   const addPayment = useGroupStore((s) => s.addPayment);
   const addPayments = useGroupStore((s) => s.addPayments);
   const amendPayment = useGroupStore((s) => s.amendPayment);
@@ -76,7 +80,7 @@ export default function PaymentForm({
   };
 
   return (
-    <section className={`${card} no-print space-y-4`}>
+    <section ref={revealRef} className={`${card} no-print space-y-4`}>
       <div>
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{editing ? 'Fine-tune payment' : 'Record a payment'}</h2>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">

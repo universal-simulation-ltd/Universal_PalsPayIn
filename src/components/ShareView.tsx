@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useFileDrop } from '@unisim/sdk';
+import { useFileDrop, useRevealOnOpen } from '@unisim/sdk';
 import type { EffectiveLedger } from '../lib/events';
 import type { StoredGroup } from '../lib/store';
 import { encodeShareFragment, exportJson, linkSizeVerdict } from '../lib/codec';
@@ -24,6 +24,8 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
   const [importError, setImportError] = useState<string | null>(null);
   const [confirmDisable, setConfirmDisable] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Each "…" button swaps itself for its choices: keep them on screen.
+  const revealRef = useRevealOnOpen<HTMLSpanElement>();
   const importPicker = useFileDrop({
     onFiles: (files) => {
       const f = files[0];
@@ -153,7 +155,7 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
                   Turn off sync…
                 </button>
               ) : (
-                <span className="flex flex-wrap gap-2 text-xs">
+                <span ref={revealRef} className="flex flex-wrap gap-2 text-xs">
                   <button type="button" className={btnGhost} onClick={() => { void disableRelay(false); setConfirmDisable(false); }}>
                     Turn off on this device only
                   </button>
@@ -241,7 +243,7 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
               Delete this group from this device…
             </button>
           ) : (
-            <span className="flex flex-wrap items-center gap-2 text-xs">
+            <span ref={revealRef} className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-slate-600 dark:text-slate-300">Other devices' copies are unaffected. Sure?</span>
               <button type="button" className={btnDanger} onClick={() => void removeGroup(group.groupId)}>
                 Yes, delete it here

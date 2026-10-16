@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
+import { useRevealOnOpen } from '@unisim/sdk';
 import type { EventId, ExpenseEvent, MemberEvent, SplitSpec } from '../lib/events';
 import { COMMON_CURRENCIES, currencyExponent, formatAmount, parseAmount } from '../lib/money';
 import { splitProblem } from '../lib/split';
@@ -30,6 +31,9 @@ export default function ExpenseForm({
   editing?: ExpenseEvent;
   onClose: () => void;
 }) {
+  // Opened by Add expense or Fine-tune: scroll the whole form on screen.
+  const revealRef = useRevealOnOpen<HTMLElement>();
+  const chargedId = useId();
   const addExpense = useGroupStore((s) => s.addExpense);
   const amendExpense = useGroupStore((s) => s.amendExpense);
   const addRecurring = useGroupStore((s) => s.addRecurring);
@@ -165,7 +169,7 @@ export default function ExpenseForm({
   ];
 
   return (
-    <section className={`${card} no-print space-y-4`}>
+    <section ref={revealRef} className={`${card} no-print space-y-4`}>
       <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{editing ? 'Fine-tune expense' : 'Add an expense'}</h2>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -300,11 +304,11 @@ export default function ExpenseForm({
       )}
 
       <div>
-        <button type="button" className="text-xs font-medium text-slate-500 underline-offset-2 hover:underline dark:text-slate-400" onClick={() => setShowCharged((v) => !v)}>
+        <button type="button" className="text-xs font-medium text-slate-500 underline-offset-2 hover:underline dark:text-slate-400" onClick={() => setShowCharged((v) => !v)} aria-expanded={showCharged} aria-controls={chargedId}>
           {showCharged ? '▾' : '▸'} Paid on a card in a different currency?
         </button>
         {showCharged && (
-          <div className="mt-2 grid grid-cols-[1fr_auto] gap-2 sm:max-w-sm">
+          <div id={chargedId} className="mt-2 grid grid-cols-[1fr_auto] gap-2 sm:max-w-sm">
             <div className="min-w-0">
               <label className={label}>What the card was actually charged</label>
               <input className={`${inputCls} tabular`} inputMode="decimal" value={chargedAmount} onChange={(e) => setChargedAmount(e.target.value)} placeholder="36.90" />

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useFileDrop } from '@unisim/sdk';
+import { useFileDrop, useRevealOnOpen } from '@unisim/sdk';
 import { useGroupStore } from '../stores/groupStore';
 import { balances } from '../lib/balances';
 import { effectiveLedger } from '../lib/events';
@@ -20,6 +20,8 @@ export default function GroupList() {
   const [name, setName] = useState('');
   const [members, setMembers] = useState('');
   const [creating, setCreating] = useState(groups.length === 0);
+  // New group swaps its buttons for the form: scroll the form on screen.
+  const revealRef = useRevealOnOpen();
   const [importError, setImportError] = useState<string | null>(null);
   /** The group whose ✕ has been pressed — deleting is one tap away, but never one tap. */
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -76,7 +78,7 @@ export default function GroupList() {
           <p className="text-xs text-slate-500 dark:text-slate-400">Got a share link instead? Just open it — it lands here by itself.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div ref={revealRef} className="space-y-4">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">New group</h2>
           <div>
             <label className={label} htmlFor="group-name">

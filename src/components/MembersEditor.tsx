@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRevealOnOpen } from '@unisim/sdk';
 import type { BankAccount, EventId, MemberEvent, MemberHandles, PayMethod } from '../lib/events';
 import { PAY_METHODS, bankAccountFilled, offersMethod } from '../lib/events';
 import { cleanHandle } from '../lib/paylinks';
@@ -23,6 +24,8 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
   const amendMember = useGroupStore((s) => s.amendMember);
   const [newName, setNewName] = useState('');
   const [editing, setEditing] = useState<EventId | null>(null);
+  // Edit swaps the row for its (tall) form: scroll the form on screen.
+  const revealRef = useRevealOnOpen();
   const [draftName, setDraftName] = useState('');
   const [draft, setDraft] = useState<MemberHandles>({});
   const [account, setAccount] = useState<BankAccount>({});
@@ -70,7 +73,7 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
         {members.map((m) => (
           <li key={m.id} className="text-sm text-slate-700 dark:text-slate-300">
             {editing === m.id ? (
-              <div className="space-y-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+              <div ref={revealRef} className="space-y-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
                 <div>
                   <label className={label}>Name</label>
                   <input className={`${inputCls} max-w-60`} value={draftName} onChange={(e) => setDraftName(e.target.value)} autoFocus />
