@@ -107,9 +107,11 @@ What else reaches a server, and nothing more:
 - **The relay's rate limit** counts requests per IP address for one minute, in
   the Worker's memory only; it is never stored. Request logging (Workers
   observability) is switched off.
-- There is no sign-in, no usage tracking and no user count: the navbar's
-  account menu is off (`noAccounts`), which also keeps `@unisim/sdk`'s
-  anonymous daily open count off.
+- There is no account of its own, no usage tracking and no user count: the
+  navbar's account menu is off (`noAccounts`), which also keeps `@unisim/sdk`'s
+  anonymous daily open count off. A UNI·SIM sign-in the browser already holds
+  is recognised, so your suite-wide settings come with you, and Tune this app
+  offers a discreet Sign in; your groups are never tied to it.
 
 ## Licence
 

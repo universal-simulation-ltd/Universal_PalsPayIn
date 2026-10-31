@@ -14,7 +14,10 @@ import './index.css';
 // missing a value and the fix is a migration, not a cast.
 //
 // No accounts (privacy audit 2026-10-12): `noAccounts: true` drops the
-// navbar's profile icon and sign-in, and <UsageTracker /> is gone. The SDK user
+// navbar's profile icon and account rows, and <UsageTracker /> is gone. Since
+// SDK 0.211.0 it no longer keeps people signed out: a suite session the
+// browser already holds is read and followed (their Global Tuning comes with
+// them), and Tune this app offers a discreet Sign in. The SDK user
 // count was retired in 0.187.0, and `noAccounts` keeps its anonymous daily open
 // count off too. README → Privacy describes this; change both together.
 const universalConfig = {
