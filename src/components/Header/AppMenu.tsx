@@ -1,10 +1,11 @@
-import { AdvancedMenu } from '@unisim/sdk'
+import { AdvancedMenu, MENU, type MenuTheme } from '@unisim/sdk'
 // Generated — `npm run credits` after any dependency change. Never edit it by
 // hand: it is read off the installed tree, so a hand-kept list drifts from the
 // lockfile the first time anyone upgrades anything, and a credits list naming a
 // package we removed is worse than no list at all.
 import credits from '../../generated/credits.json'
 import { useGroupStore } from '../../stores/groupStore';
+import { useThemeStore } from '../../stores/themeStore';
 
 // The per-app rows that slot into <UniversalAppsNavBar />'s `actions` prop —
 // ROWS ONLY, no trigger and no panel of its own. Inline styles match the SDK
@@ -18,20 +19,29 @@ import { useGroupStore } from '../../stores/groupStore';
 
 const TINT = { bg: '#fff7ed', fg: '#c2410c' };
 const REST_COLOR = '#374151';
+const LIGHT_FAINT = '#9ca3af';
+
+// Light renders exactly as it always did; dark takes the SDK menu palette, so
+// the rows read on the dark dropdown the bar opens when the app is dark.
+const tintFor = (theme: MenuTheme) => (theme === 'dark' ? { bg: MENU.dark.accentBg, fg: MENU.dark.accentText } : TINT);
+const restFor = (theme: MenuTheme) => (theme === 'dark' ? MENU.dark.body : REST_COLOR);
+const faintFor = (theme: MenuTheme) => (theme === 'dark' ? MENU.dark.muted : LIGHT_FAINT);
 
 export default function AppMenu() {
+  const theme = useThemeStore((s) => s.effective);
   const open = useGroupStore((s) => s.open);
   const activeId = useGroupStore((s) => s.activeId);
 
   return (
     <>
-      <MenuLabel>Groups</MenuLabel>
-      <MenuRow glyph="👥" label="All groups" onClick={() => open(null)} disabled={activeId === null} />
+      <MenuLabel theme={theme}>Groups</MenuLabel>
+      <MenuRow theme={theme} glyph="👥" label="All groups" onClick={() => open(null)} disabled={activeId === null} />
 
       {/* Advanced — the SDK's own category, so every app in the suite has one in
           the same place, and whatever goes in it next is one change rather than
           nineteen. "About this app" is always its last row. */}
       <AdvancedMenu
+        theme={theme}
         about={{
           repo:    'https://github.com/universal-simulation-ltd/Universal_PalsPayIn',
           subject: 'Your ledger',
@@ -46,7 +56,7 @@ export default function AppMenu() {
   );
 }
 
-function MenuLabel({ children }: { children: string }) {
+function MenuLabel({ children, theme }: { children: string; theme: MenuTheme }) {
   return (
     <div
       style={{
@@ -55,7 +65,7 @@ function MenuLabel({ children }: { children: string }) {
         fontWeight: 600,
         letterSpacing: '0.06em',
         textTransform: 'uppercase',
-        color: '#9ca3af',
+        color: faintFor(theme),
       }}
     >
       {children}
@@ -64,16 +74,20 @@ function MenuLabel({ children }: { children: string }) {
 }
 
 function MenuRow({
+  theme,
   glyph,
   label,
   onClick,
   disabled = false,
 }: {
+  theme: MenuTheme;
   glyph: string;
   label: string;
   onClick: () => void;
   disabled?: boolean;
 }) {
+  const tint = tintFor(theme);
+  const rest = restFor(theme);
   return (
     <button
       type="button"
@@ -91,20 +105,20 @@ function MenuRow({
         textAlign: 'left',
         border: 0,
         background: 'transparent',
-        color: disabled ? '#9ca3af' : REST_COLOR,
+        color: disabled ? faintFor(theme) : rest,
         cursor: disabled ? 'default' : 'pointer',
         opacity: disabled ? 0.6 : 1,
         transition: 'background 120ms, color 120ms',
       }}
       onMouseEnter={(e) => {
         if (disabled) return;
-        e.currentTarget.style.background = TINT.bg;
-        e.currentTarget.style.color = TINT.fg;
+        e.currentTarget.style.background = tint.bg;
+        e.currentTarget.style.color = tint.fg;
       }}
       onMouseLeave={(e) => {
         if (disabled) return;
         e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.color = REST_COLOR;
+        e.currentTarget.style.color = rest;
       }}
     >
       <span aria-hidden>{glyph}</span>

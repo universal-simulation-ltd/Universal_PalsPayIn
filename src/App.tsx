@@ -35,6 +35,9 @@ export default function App() {
   const importNotice = useGroupStore((s) => s.importNotice);
   const dismissNotice = useGroupStore((s) => s.dismissNotice);
   const pendingSuspicions = useGroupStore((s) => s.pendingSuspicions);
+  // The RESOLVED theme: the bar and its dropdowns are inline-styled, so
+  // without it they stay light in a dark app.
+  const theme = useThemeStore((s) => s.effective);
 
   useEffect(() => {
     void init();
@@ -48,6 +51,7 @@ export default function App() {
         productLogo={<ProductLogo />}
         productHomeHref={import.meta.env.BASE_URL}
         actions={<AppMenu />}
+        theme={theme}
         themeStore={useThemeStore}
         suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
       />
