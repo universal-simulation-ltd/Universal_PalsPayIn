@@ -7,7 +7,7 @@ import { ledgerCsv } from '../lib/csv';
 import { capabilityFragment } from '../lib/relay';
 import { useGroupStore } from '../stores/groupStore';
 import UnisimQr from './UnisimQr';
-import { btnDanger, btnGhost, btnPrimary, card } from './ui';
+import { BinIcon, btnDanger, btnGhost, btnPrimary, btnQuiet, card, DownloadIcon, Key, UploadIcon } from './ui';
 
 export default function ShareView({ group, ledger }: { group: StoredGroup; ledger: EffectiveLedger }) {
   const importFile = useGroupStore((s) => s.importFile);
@@ -116,7 +116,8 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
               Turn this on and everyone's copies stay in step automatically. Your entries are encrypted <em>on this device</em>; the
               relay stores bytes it cannot read, and the key travels only inside the join link — we never see it. No account needed.
             </p>
-            <button type="button" className={`${btnPrimary} mt-3`} onClick={() => void enableRelay()}>
+            {/* Secondary: Copy link above is this tab's one primary. */}
+            <button type="button" className={`${btnGhost} mt-3`} onClick={() => void enableRelay()}>
               Turn on encrypted sync
             </button>
           </>
@@ -129,7 +130,7 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
             </p>
             {relayLink && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button type="button" className={btnPrimary} onClick={() => void copy(relayLink, 'relay')}>
+                <button type="button" className={btnGhost} onClick={() => void copy(relayLink, 'relay')}>
                   {copied === 'relay' ? 'Copied ✓' : 'Copy join link'}
                 </button>
                 <button type="button" className={btnGhost} onClick={() => void syncNow()} disabled={sync.syncing}>
@@ -162,7 +163,7 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
                   <button type="button" className={btnDanger} onClick={() => { void disableRelay(true); setConfirmDisable(false); }}>
                     Turn off and delete the synced copy for everyone
                   </button>
-                  <button type="button" className="font-medium text-slate-500 hover:underline" onClick={() => setConfirmDisable(false)}>
+                  <button type="button" className={btnQuiet} onClick={() => setConfirmDisable(false)}>
                     Cancel
                   </button>
                 </span>
@@ -177,9 +178,15 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Files & exports</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" className={btnGhost} onClick={() => download(`${slug}-ledger.json`, exportJson(group), 'application/json')}>
+            <Key>
+              <DownloadIcon />
+            </Key>
             Download ledger file
           </button>
           <button type="button" className={btnGhost} onClick={importPicker.open}>
+            <Key>
+              <UploadIcon />
+            </Key>
             Import a ledger file…
           </button>
           <button type="button" className={btnGhost} onClick={() => download(`${slug}.csv`, ledgerCsv(ledger), 'text/csv')}>
@@ -240,6 +247,9 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
           </button>
           {!confirmDelete ? (
             <button type="button" className={btnDanger} onClick={() => setConfirmDelete(true)}>
+              <Key>
+                <BinIcon />
+              </Key>
               Delete this group from this device…
             </button>
           ) : (
@@ -248,7 +258,7 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
               <button type="button" className={btnDanger} onClick={() => void removeGroup(group.groupId)}>
                 Yes, delete it here
               </button>
-              <button type="button" className="font-medium text-slate-500 hover:underline" onClick={() => setConfirmDelete(false)}>
+              <button type="button" className={btnQuiet} onClick={() => setConfirmDelete(false)}>
                 Cancel
               </button>
             </span>

@@ -1,12 +1,35 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { buttonClass } from '@unisim/sdk';
 
 // Shared class strings — one visual language across the app.
-export const btnPrimary =
-  'rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-40';
-export const btnGhost =
-  'rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800';
-export const btnDanger =
-  'rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950';
+// Buttons are the suite's key buttons (SDK 0.216, BRANDING.md → Buttons,
+// 2026-11-04): main.tsx installs their CSS. Primary is once per view; add
+// `u-btn--sm` for the small size, and put an icon in a <Key> as the first child.
+export const btnPrimary = buttonClass('primary');
+export const btnGhost = buttonClass();
+export const btnDanger = buttonClass('danger');
+export const btnSoft = buttonClass('soft');
+export const btnQuiet = buttonClass('quiet');
+
+/** A key button's icon block, its first child. */
+export function Key({ children }: { children: ReactNode }) {
+  return (
+    <span className="u-btn__key" aria-hidden>
+      {children}
+    </span>
+  );
+}
+
+const icon = (d: string) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d={d} />
+  </svg>
+);
+export const PlusIcon = () => icon('M12 5v14M5 12h14');
+export const CheckIcon = () => icon('M5 12.5l4.5 4.5L19 7.5');
+export const BinIcon = () => icon('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3');
+export const UploadIcon = () => icon('M12 16V4M7 9l5-5 5 5M5 20h14');
+export const DownloadIcon = () => icon('M12 4v12M7 11l5 5 5-5M5 20h14');
 export const btnSmall = 'rounded-md px-2 py-1 text-xs font-medium';
 // `min-w-0` on the controls is load-bearing on a phone: without it a field's
 // intrinsic width — a date picker's especially — forces its grid or flex track
@@ -96,7 +119,7 @@ export function ScrollFade({
 }
 
 /** A button that copies text and says so, then goes quiet again. */
-export function CopyButton({ text, label: idle = 'Copy', className = btnPrimary }: { text: string; label?: string; className?: string }) {
+export function CopyButton({ text, label: idle = 'Copy', className = btnGhost }: { text: string; label?: string; className?: string }) {
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;

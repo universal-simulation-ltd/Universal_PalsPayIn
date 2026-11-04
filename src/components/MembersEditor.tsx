@@ -4,7 +4,7 @@ import type { BankAccount, EventId, MemberEvent, MemberHandles, PayMethod } from
 import { PAY_METHODS, bankAccountFilled, offersMethod } from '../lib/events';
 import { cleanHandle } from '../lib/paylinks';
 import { useGroupStore } from '../stores/groupStore';
-import { btnGhost, btnPrimary, card, checkboxCls, inputCls, label, MemberDot } from './ui';
+import { btnGhost, btnPrimary, btnQuiet, card, checkboxCls, inputCls, Key, label, MemberDot, PlusIcon } from './ui';
 
 const METHOD_LABEL: Record<PayMethod, string> = {
   cash: 'Cash',
@@ -153,7 +153,7 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
                   <button type="button" className={btnPrimary} onClick={() => save(m)}>
                     Save
                   </button>
-                  <button type="button" className={btnGhost} onClick={() => setEditing(null)}>
+                  <button type="button" className={btnQuiet} onClick={() => setEditing(null)}>
                     Cancel
                   </button>
                 </div>
@@ -182,13 +182,17 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
         <input className={inputCls} value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Add someone…" />
         <button
           type="button"
-          className={`${newName.trim() ? btnPrimary : btnGhost} shrink-0`}
+          // Secondary, not primary: Add expense is this view's one primary.
+          className={`${btnGhost} shrink-0`}
           disabled={newName.trim() === ''}
           onClick={() => {
             void addMember(newName);
             setNewName('');
           }}
         >
+          <Key>
+            <PlusIcon />
+          </Key>
           Add
         </button>
       </div>

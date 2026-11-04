@@ -7,7 +7,7 @@ import { payOptions } from '../lib/paylinks';
 import type { SettleChoice, Transfer } from '../lib/settle';
 import { settlementMessage } from '../lib/summary';
 import PaymentForm from './PaymentForm';
-import { card, checkboxCls, CopyButton, MemberDot, ScrollFade } from './ui';
+import { btnGhost, btnSoft, card, checkboxCls, CopyButton, MemberDot, ScrollFade } from './ui';
 
 export default function SettleView({
   ledger,
@@ -200,7 +200,7 @@ function TransferRow({
           {options.length > 0 && (
             <button
               type="button"
-              className="no-print rounded-md bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800 hover:bg-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:hover:bg-orange-900/60"
+              className={`${btnSoft} u-btn--sm no-print`}
               onClick={() => setShowPay((v) => !v)}
               aria-expanded={showPay}
               aria-controls={payId}
@@ -210,7 +210,7 @@ function TransferRow({
           )}
           <button
             type="button"
-            className="no-print rounded-md bg-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+            className={`${btnGhost} u-btn--sm no-print`}
             onClick={onRecord}
           >
             They've sent it →
@@ -223,7 +223,7 @@ function TransferRow({
             <div key={o.kind} className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-orange-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                className={`${btnGhost} u-btn--sm`}
                 onClick={() => {
                   if (o.copyText) void navigator.clipboard.writeText(o.copyText);
                   if (o.url) window.open(o.url, '_blank', 'noopener');

@@ -4,7 +4,7 @@ import type { EventId, ExpenseEvent, MemberEvent, SplitSpec } from '../lib/event
 import { COMMON_CURRENCIES, currencyExponent, formatAmount, parseAmount } from '../lib/money';
 import { splitProblem } from '../lib/split';
 import { useGroupStore, type ExpenseFields } from '../stores/groupStore';
-import { btnGhost, btnPrimary, card, inputCls, label, selectCls, MemberDot } from './ui';
+import { btnPrimary, btnQuiet, card, CheckIcon, Key, inputCls, label, selectCls, MemberDot } from './ui';
 
 type Mode = 'even' | 'exact' | 'shares' | 'percent' | 'itemised';
 
@@ -213,16 +213,9 @@ export default function ExpenseForm({
 
       <div>
         <label className={label}>Split</label>
-        <div className="flex flex-wrap gap-1">
+        <div className="u-tabs">
           {modeButtons.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setMode(m.id)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-                mode === m.id ? 'bg-slate-900 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-              }`}
-            >
+            <button key={m.id} type="button" onClick={() => setMode(m.id)} aria-pressed={mode === m.id} className="u-tab">
               {m.title}
             </button>
           ))}
@@ -339,9 +332,12 @@ export default function ExpenseForm({
 
       <div className="flex gap-2">
         <button type="button" className={btnPrimary} disabled={!canSave} onClick={() => void onSave()}>
+          <Key>
+            <CheckIcon />
+          </Key>
           {editing ? 'Save changes' : 'Add expense'}
         </button>
-        <button type="button" className={btnGhost} onClick={onClose}>
+        <button type="button" className={btnQuiet} onClick={onClose}>
           Cancel
         </button>
       </div>

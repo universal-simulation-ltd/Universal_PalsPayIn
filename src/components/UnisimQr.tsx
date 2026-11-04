@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { QrLightbox, UnisimQr as SdkQr, fitsQr, unisimQrPngBlob } from '@unisim/sdk';
+import { buttonClass, QrLightbox, UnisimQr as SdkQr, fitsQr, unisimQrPngBlob } from '@unisim/sdk';
 
 /**
  * A QR code in the UNI·SIM house style, plus the two things this app wants
@@ -136,7 +136,7 @@ function QrAction({ onClick, children }: { onClick: () => void; children: ReactN
     <button
       type="button"
       onClick={onClick}
-      className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+      className={buttonClass(undefined, 'sm')}
     >
       {children}
     </button>

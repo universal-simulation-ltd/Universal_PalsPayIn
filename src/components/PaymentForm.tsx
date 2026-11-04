@@ -4,7 +4,7 @@ import type { EventId, MemberEvent, PaymentEvent } from '../lib/events';
 import { allocate } from '../lib/allocate';
 import { COMMON_CURRENCIES, formatAmount, parseAmount, currencyExponent } from '../lib/money';
 import { useGroupStore, type PaymentFields } from '../stores/groupStore';
-import { btnGhost, btnPrimary, card, inputCls, label, selectCls } from './ui';
+import { btnPrimary, btnQuiet, card, CheckIcon, Key, inputCls, label, selectCls } from './ui';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -166,9 +166,12 @@ export default function PaymentForm({
 
       <div className="flex flex-wrap gap-2">
         <button type="button" className={btnPrimary} disabled={!canSave} onClick={() => void onSave()}>
+          <Key>
+            <CheckIcon />
+          </Key>
           {editing ? 'Save changes' : 'Record it'}
         </button>
-        <button type="button" className={btnGhost} onClick={onClose}>
+        <button type="button" className={btnQuiet} onClick={onClose}>
           Cancel
         </button>
       </div>

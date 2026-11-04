@@ -7,7 +7,7 @@ import { formatAmount } from '../lib/money';
 import { groupStats, portfolioStats, type GroupStats } from '../lib/stats';
 import type { StoredGroup } from '../lib/store';
 import { EmptyRail, PortfolioRail } from './StatsRail';
-import { btnDanger, btnGhost, btnPrimary, card, inputCls, label } from './ui';
+import { BinIcon, btnDanger, btnGhost, btnPrimary, btnQuiet, card, inputCls, Key, label, PlusIcon, UploadIcon } from './ui';
 
 export default function GroupList() {
   const groups = useGroupStore((s) => s.groups);
@@ -67,9 +67,15 @@ export default function GroupList() {
       {!creating ? (
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" className={btnPrimary} onClick={() => setCreating(true)}>
+            <Key>
+              <PlusIcon />
+            </Key>
             New group
           </button>
           <button type="button" className={btnGhost} onClick={importPicker.open}>
+            <Key>
+              <UploadIcon />
+            </Key>
             Import a ledger file…
           </button>
           <button type="button" className={btnGhost} onClick={() => void loadExample()}>
@@ -103,14 +109,20 @@ export default function GroupList() {
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={btnPrimary} disabled={!canCreate} onClick={() => void onCreate()}>
+              <Key>
+                <PlusIcon />
+              </Key>
               Create group
             </button>
             {groups.length > 0 && (
-              <button type="button" className={btnGhost} onClick={() => setCreating(false)}>
+              <button type="button" className={btnQuiet} onClick={() => setCreating(false)}>
                 Cancel
               </button>
             )}
             <button type="button" className={btnGhost} onClick={importPicker.open}>
+              <Key>
+                <UploadIcon />
+              </Key>
               Import a ledger file…
             </button>
           </div>
@@ -275,9 +287,12 @@ function DeleteConfirm({ group, onConfirm, onCancel }: { group: StoredGroup; onC
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" className={btnDanger} onClick={onConfirm} autoFocus>
+          <Key>
+            <BinIcon />
+          </Key>
           Delete
         </button>
-        <button type="button" className={btnGhost} onClick={onCancel}>
+        <button type="button" className={btnQuiet} onClick={onCancel}>
           Cancel
         </button>
       </div>
