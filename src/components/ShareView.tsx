@@ -7,7 +7,7 @@ import { ledgerCsv } from '../lib/csv';
 import { capabilityFragment } from '../lib/relay';
 import { useGroupStore } from '../stores/groupStore';
 import UnisimQr from './UnisimQr';
-import { BinIcon, btnDanger, btnGhost, btnPrimary, btnQuiet, card, DownloadIcon, Key, UploadIcon } from './ui';
+import { BinIcon, btnDanger, btnGhost, btnPrimary, btnQuiet, card, DownloadIcon, Key, UploadIcon, usePrimaryClaim } from './ui';
 
 export default function ShareView({ group, ledger }: { group: StoredGroup; ledger: EffectiveLedger }) {
   const importFile = useGroupStore((s) => s.importFile);
@@ -20,6 +20,8 @@ export default function ShareView({ group, ledger }: { group: StoredGroup; ledge
   const sync = useGroupStore((s) => s.sync);
 
   const [link, setLink] = useState<string | null>(null);
+  // Copy link is this tab's one primary, so the header's Add expense steps down.
+  usePrimaryClaim(link !== null);
   const [copied, setCopied] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [confirmDisable, setConfirmDisable] = useState(false);

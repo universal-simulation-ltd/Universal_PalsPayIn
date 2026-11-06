@@ -4,7 +4,7 @@ import type { BankAccount, EventId, MemberEvent, MemberHandles, PayMethod } from
 import { PAY_METHODS, bankAccountFilled, offersMethod } from '../lib/events';
 import { cleanHandle } from '../lib/paylinks';
 import { useGroupStore } from '../stores/groupStore';
-import { btnGhost, btnPrimary, btnQuiet, card, checkboxCls, inputCls, Key, label, MemberDot, PlusIcon } from './ui';
+import { btnGhost, btnPrimary, btnQuiet, card, checkboxCls, inputCls, Key, label, MemberDot, PlusIcon, usePrimaryClaim } from './ui';
 
 const METHOD_LABEL: Record<PayMethod, string> = {
   cash: 'Cash',
@@ -24,6 +24,8 @@ export default function MembersEditor({ members }: { members: MemberEvent[] }) {
   const amendMember = useGroupStore((s) => s.amendMember);
   const [newName, setNewName] = useState('');
   const [editing, setEditing] = useState<EventId | null>(null);
+  // A member being fine-tuned: its Save is the view's one primary.
+  usePrimaryClaim(editing !== null);
   // Edit swaps the row for its (tall) form: scroll the form on screen.
   const revealRef = useRevealOnOpen();
   const [draftName, setDraftName] = useState('');

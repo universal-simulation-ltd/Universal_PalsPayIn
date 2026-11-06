@@ -4,7 +4,7 @@ import type { EventId, MemberEvent, PaymentEvent } from '../lib/events';
 import { allocate } from '../lib/allocate';
 import { COMMON_CURRENCIES, formatAmount, parseAmount, currencyExponent } from '../lib/money';
 import { useGroupStore, type PaymentFields } from '../stores/groupStore';
-import { btnPrimary, btnQuiet, card, CheckIcon, Key, inputCls, label, selectCls } from './ui';
+import { btnPrimary, btnQuiet, card, CheckIcon, Key, inputCls, label, selectCls, usePrimaryClaim } from './ui';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -31,6 +31,8 @@ export default function PaymentForm({
   // Opened by Record a payment, Fine-tune or They've sent it: scroll the whole
   // form on screen.
   const revealRef = useRevealOnOpen<HTMLElement>();
+  // Its submit is the view's one primary while it is open.
+  usePrimaryClaim();
   const addPayment = useGroupStore((s) => s.addPayment);
   const addPayments = useGroupStore((s) => s.addPayments);
   const amendPayment = useGroupStore((s) => s.amendPayment);

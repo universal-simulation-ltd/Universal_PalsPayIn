@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useGroupStore } from '../stores/groupStore';
 import { effectiveLedger } from '../lib/events';
 import { balances, pairwiseDebts } from '../lib/balances';
@@ -14,7 +14,7 @@ import SettleView from './SettleView';
 import ShareView from './ShareView';
 import MembersEditor from './MembersEditor';
 import { GroupRail } from './StatsRail';
-import { btnGhost, btnPrimary, btnQuiet, Key, PlusIcon } from './ui';
+import { btnGhost, btnPrimary, btnQuiet, Key, PlusIcon, PrimaryClaimProvider } from './ui';
 
 type Tab = 'entries' | 'balances' | 'settle' | 'share';
 
@@ -27,6 +27,9 @@ export default function GroupView({ groupId }: { groupId: string }) {
   const [adding, setAdding] = useState<'expense' | 'payment' | null>(null);
   const [showMembers, setShowMembers] = useState(false);
   const membersId = useId();
+  // How many things below hold this view's primary (see usePrimaryClaim).
+  const [claims, setClaims] = useState(0);
+  const claimPrimary = useCallback((delta: 1 | -1) => setClaims((c) => c + delta), []);
 
   const eff = useMemo(() => (group ? effectiveLedger(group.events) : null), [group]);
   const bal = useMemo(() => (eff ? balances(eff) : null), [eff]);
@@ -57,88 +60,91 @@ export default function GroupView({ groupId }: { groupId: string }) {
   ];
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold break-words text-slate-900 sm:text-2xl dark:text-slate-100">{group.name}</h1>
-          <button
-            type="button"
-            onClick={() => setShowMembers((v) => !v)}
-            aria-expanded={showMembers}
-            aria-controls={membersId}
-            className="mt-0.5 text-xs font-medium text-slate-500 underline-offset-2 hover:underline dark:text-slate-400"
-          >
-            {eff.members.length} people {showMembers ? '▴' : '▾'}
-          </button>
+    <PrimaryClaimProvider value={claimPrimary}>
+      <div className="space-y-5">
+        <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold break-words text-slate-900 sm:text-2xl dark:text-slate-100">{group.name}</h1>
+            <button
+              type="button"
+              onClick={() => setShowMembers((v) => !v)}
+              aria-expanded={showMembers}
+              aria-controls={membersId}
+              className="mt-0.5 text-xs font-medium text-slate-500 underline-offset-2 hover:underline dark:text-slate-400"
+            >
+              {eff.members.length} people {showMembers ? '▴' : '▾'}
+            </button>
+          </div>
+          <div className="no-print flex flex-wrap gap-2">
+            {/* Primary until a form (or Copy link) below takes the view's one primary. */}
+            <button type="button" className={claims > 0 ? btnGhost : btnPrimary} onClick={() => setAdding('expense')}>
+              <Key>
+                <PlusIcon />
+              </Key>
+              Add expense
+            </button>
+            <button type="button" className={btnGhost} onClick={() => setAdding('payment')}>
+              Record a payment
+            </button>
+          </div>
+        </header>
+
+        {bal.corruptCurrencies.length > 0 && (
+          <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+            Something is wrong: the {bal.corruptCurrencies.join(', ')} balances do not sum to zero, which should be impossible.
+            This ledger may be corrupt — check the history rather than trusting the numbers below.
+          </div>
+        )}
+
+        {group.example && <ExampleBanner groupId={group.groupId} />}
+
+        {showMembers && (
+          <div id={membersId}>
+            <MembersEditor members={eff.members} />
+          </div>
+        )}
+
+        <RecurringNudges />
+
+        {adding === 'expense' && <ExpenseForm members={eff.members} onClose={() => setAdding(null)} />}
+        {adding === 'payment' && <PaymentForm members={eff.members} onClose={() => setAdding(null)} />}
+
+        {/* Two columns at desktop widths, 2:1 — the tabs and their contents on
+            the left, the group's numbers on the right, visible from every tab.
+            Below `lg` it stacks and the rail sits under the content. The forms
+            and banners above stay full width: an itemised split needs the room. */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="space-y-5 lg:col-span-2">
+            {/* Two-up on a phone: four tabs in one row only fit by scrolling, and a
+                tab you have to discover by swiping is a tab nobody finds. */}
+            {/* The suite's tray tabs (SDK 0.216, BRANDING.md → Tabs), kept on a
+                grid so the two-up phone layout still holds. */}
+            <nav className="u-tabs no-print grid w-full grid-cols-2 sm:grid-cols-4">
+              {tabs.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  aria-pressed={tab === t.id}
+                  className="u-tab min-w-0 justify-center"
+                >
+                  {t.title}
+                </button>
+              ))}
+            </nav>
+
+            {tab === 'entries' && <EntryList group={group} ledger={eff} />}
+            {tab === 'balances' && <BalancesView ledger={eff} bal={bal} pairwise={pairwise} />}
+            {tab === 'settle' && <SettleView ledger={eff} bal={bal} choice={choice} groupName={group.name} />}
+            {tab === 'share' && <ShareView group={group} ledger={eff} />}
+          </div>
+
+          <aside className="space-y-4 self-start lg:sticky lg:top-6">
+            <GroupRail stats={stats} transfers={choice.plan.length} onSettle={() => setTab('settle')} />
+          </aside>
         </div>
-        <div className="no-print flex flex-wrap gap-2">
-          <button type="button" className={btnPrimary} onClick={() => setAdding('expense')}>
-            <Key>
-              <PlusIcon />
-            </Key>
-            Add expense
-          </button>
-          <button type="button" className={btnGhost} onClick={() => setAdding('payment')}>
-            Record a payment
-          </button>
-        </div>
-      </header>
-
-      {bal.corruptCurrencies.length > 0 && (
-        <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-          Something is wrong: the {bal.corruptCurrencies.join(', ')} balances do not sum to zero, which should be impossible.
-          This ledger may be corrupt — check the history rather than trusting the numbers below.
-        </div>
-      )}
-
-      {group.example && <ExampleBanner groupId={group.groupId} />}
-
-      {showMembers && (
-        <div id={membersId}>
-          <MembersEditor members={eff.members} />
-        </div>
-      )}
-
-      <RecurringNudges />
-
-      {adding === 'expense' && <ExpenseForm members={eff.members} onClose={() => setAdding(null)} />}
-      {adding === 'payment' && <PaymentForm members={eff.members} onClose={() => setAdding(null)} />}
-
-      {/* Two columns at desktop widths, 2:1 — the tabs and their contents on
-          the left, the group's numbers on the right, visible from every tab.
-          Below `lg` it stacks and the rail sits under the content. The forms
-          and banners above stay full width: an itemised split needs the room. */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-5 lg:col-span-2">
-          {/* Two-up on a phone: four tabs in one row only fit by scrolling, and a
-              tab you have to discover by swiping is a tab nobody finds. */}
-          {/* The suite's tray tabs (SDK 0.216, BRANDING.md → Tabs), kept on a
-              grid so the two-up phone layout still holds. */}
-          <nav className="u-tabs no-print grid w-full grid-cols-2 sm:grid-cols-4">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                aria-pressed={tab === t.id}
-                className="u-tab min-w-0 justify-center"
-              >
-                {t.title}
-              </button>
-            ))}
-          </nav>
-
-          {tab === 'entries' && <EntryList group={group} ledger={eff} />}
-          {tab === 'balances' && <BalancesView ledger={eff} bal={bal} pairwise={pairwise} />}
-          {tab === 'settle' && <SettleView ledger={eff} bal={bal} choice={choice} groupName={group.name} />}
-          {tab === 'share' && <ShareView group={group} ledger={eff} />}
-        </div>
-
-        <aside className="space-y-4 self-start lg:sticky lg:top-6">
-          <GroupRail stats={stats} transfers={choice.plan.length} onSettle={() => setTab('settle')} />
-        </aside>
       </div>
-    </div>
+    </PrimaryClaimProvider>
   );
 }
 

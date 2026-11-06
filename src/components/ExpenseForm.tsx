@@ -4,7 +4,7 @@ import type { EventId, ExpenseEvent, MemberEvent, SplitSpec } from '../lib/event
 import { COMMON_CURRENCIES, currencyExponent, formatAmount, parseAmount } from '../lib/money';
 import { splitProblem } from '../lib/split';
 import { useGroupStore, type ExpenseFields } from '../stores/groupStore';
-import { btnPrimary, btnQuiet, card, CheckIcon, Key, inputCls, label, selectCls, MemberDot } from './ui';
+import { btnPrimary, btnQuiet, card, CheckIcon, Key, inputCls, label, selectCls, MemberDot, usePrimaryClaim } from './ui';
 
 type Mode = 'even' | 'exact' | 'shares' | 'percent' | 'itemised';
 
@@ -34,6 +34,8 @@ export default function ExpenseForm({
   // Opened by Add expense or Fine-tune: scroll the whole form on screen.
   const revealRef = useRevealOnOpen<HTMLElement>();
   const chargedId = useId();
+  // Its submit is the view's one primary while it is open.
+  usePrimaryClaim();
   const addExpense = useGroupStore((s) => s.addExpense);
   const amendExpense = useGroupStore((s) => s.amendExpense);
   const addRecurring = useGroupStore((s) => s.addRecurring);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { buttonClass } from '@unisim/sdk';
 
 // Shared class strings — one visual language across the app.
@@ -10,6 +10,24 @@ export const btnGhost = buttonClass();
 export const btnDanger = buttonClass('danger');
 export const btnSoft = buttonClass('soft');
 export const btnQuiet = buttonClass('quiet');
+
+/**
+ * One primary per view. The group view's header "Add expense" is its primary
+ * until something else on screen has one — an open expense or payment form,
+ * a member being fine-tuned, the Share tab's Copy link — then it steps down to
+ * secondary. Those call `usePrimaryClaim()` while they are showing; GroupView
+ * counts the claims.
+ */
+const PrimaryClaimContext = createContext<((delta: 1 | -1) => void) | null>(null);
+export const PrimaryClaimProvider = PrimaryClaimContext.Provider;
+export function usePrimaryClaim(active = true) {
+  const claim = useContext(PrimaryClaimContext);
+  useEffect(() => {
+    if (!claim || !active) return;
+    claim(1);
+    return () => claim(-1);
+  }, [claim, active]);
+}
 
 /** A key button's icon block, its first child. */
 export function Key({ children }: { children: ReactNode }) {
