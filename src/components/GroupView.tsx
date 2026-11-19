@@ -52,11 +52,12 @@ export default function GroupView({ groupId }: { groupId: string }) {
 
   if (!group || !eff || !bal || !stats || !choice) return null;
 
-  const tabs: { id: Tab; title: string }[] = [
+  // `short`: the label in the phone dock, where four tabs share one row.
+  const tabs: { id: Tab; title: string; short?: string }[] = [
     { id: 'entries', title: 'Expenses' },
     { id: 'balances', title: 'Balances' },
     { id: 'settle', title: 'Settle up' },
-    { id: 'share', title: 'Share & sync' },
+    { id: 'share', title: 'Share & sync', short: 'Share' },
   ];
 
   return (
@@ -115,11 +116,13 @@ export default function GroupView({ groupId }: { groupId: string }) {
             and banners above stay full width: an itemised split needs the room. */}
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-5 lg:col-span-2">
-            {/* Two-up on a phone: four tabs in one row only fit by scrolling, and a
-                tab you have to discover by swiping is a tab nobody finds. */}
-            {/* The suite's tray tabs (SDK 0.216, BRANDING.md → Tabs), kept on a
-                grid so the two-up phone layout still holds. */}
-            <nav className="u-tabs no-print grid w-full grid-cols-2 sm:grid-cols-4">
+            {/* The suite's tray tabs (SDK 0.216, BRANDING.md → Tabs). On a phone
+                they dock at the foot of the screen, one row of four sharing the
+                width (owner rule 2026-11-19, BRANDING.md → "On a phone,
+                navigation sits at the bottom"; SDK 0.222 `u-tabs--dock`) — that
+                replaced the two-up grid, which was there so no tab hid behind a
+                sideways scroll. From 768px up: four equal columns, as before. */}
+            <nav className="u-tabs u-tabs--dock no-print w-full md:grid md:grid-cols-4">
               {tabs.map((t) => (
                 <button
                   key={t.id}
@@ -128,7 +131,14 @@ export default function GroupView({ groupId }: { groupId: string }) {
                   aria-pressed={tab === t.id}
                   className="u-tab min-w-0 justify-center"
                 >
-                  {t.title}
+                  {t.short ? (
+                    <>
+                      <span className="md:hidden">{t.short}</span>
+                      <span className="max-md:hidden">{t.title}</span>
+                    </>
+                  ) : (
+                    t.title
+                  )}
                 </button>
               ))}
             </nav>

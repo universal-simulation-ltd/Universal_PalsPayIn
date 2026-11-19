@@ -44,7 +44,11 @@ export default function App() {
   }, [init]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-100 dark:bg-slate-950">
+    // pb-[var(--u-dock-space)]: on a phone a group's tabs dock at the foot of
+    // the screen (SDK 0.222). The SDK pads <body> too, but html/body are
+    // height:100% here, so the page overflows body and that padding never
+    // reaches the end of the scroll; this box's does. 0 without the dock.
+    <div className="flex min-h-screen flex-col bg-slate-100 pb-[var(--u-dock-space,0px)] dark:bg-slate-950">
       <UniversalAppsNavBar
         // Signed in, the bar says whose it is: "Bradley’s PalsPayIn" ("James’ PalsPayIn",
         // "My PalsPayIn" with no name), and Tune this app gets the account area (James, 2026-11-10 rollout).
