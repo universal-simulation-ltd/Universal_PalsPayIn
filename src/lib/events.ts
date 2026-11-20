@@ -177,6 +177,16 @@ export function mergeEvents(mine: LedgerEvent[], theirs: LedgerEvent[]): { merge
   return { merged: [...mine, ...added], added };
 }
 
+/**
+ * Tombstones for entries being removed: one void per entry, with its own id.
+ * Removing several at once appends exactly what removing them one at a time
+ * would (the same voids, just in one write), so the balances come out the
+ * same either way. Duplicate ids collapse to one void.
+ */
+export function voidEvents(entryIds: readonly EventId[], make: () => BaseEvent): VoidEvent[] {
+  return [...new Set(entryIds)].map((supersedes) => ({ kind: 'void' as const, ...make(), supersedes }));
+}
+
 // ---------------------------------------------------------------------------
 // The effective view: what the log means once amends, voids and compacts are
 // resolved. Pure and deterministic over the SET of events — order of arrival

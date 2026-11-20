@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useFileDrop, useRevealOnOpen } from '@unisim/sdk';
+import { phoneConfirm, SelectCheckbox, SelectionBar, useFileDrop, useRevealOnOpen, useSelection, type ListSelection } from '@unisim/sdk';
 import { useGroupStore } from '../stores/groupStore';
 import { balances } from '../lib/balances';
 import { effectiveLedger } from '../lib/events';
@@ -44,6 +44,19 @@ export default function GroupList() {
     [groups],
   );
   const portfolio = useMemo(() => portfolioStats(rows.map((r) => r.stats)), [rows]);
+
+  // Select several groups, then delete them together — each one exactly as
+  // its own ✕ would (this device's copy only).
+  const sel = useSelection(rows.map((r) => r.group.groupId));
+  const confirmBulkDelete = (_message: string, n: number) => {
+    const picked = groups.filter((g) => sel.has(g.groupId));
+    const synced = picked.filter((g) => g.relayEnabled).length;
+    return phoneConfirm({ message: bulkDeleteMessage(n, synced), confirmLabel: 'Delete', danger: true });
+  };
+  const deleteGroups = async (ids: string[]) => {
+    if (confirmDelete && ids.includes(confirmDelete)) setConfirmDelete(null);
+    for (const id of ids) await removeGroup(id);
+  };
 
   const memberNames = members.split(/[,\n]/).map((m) => m.trim()).filter(Boolean);
   const canCreate = name.trim().length > 0 && memberNames.length >= 2;
@@ -167,29 +180,39 @@ export default function GroupList() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           {rows.length > 0 && (
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {rows.map(({ group, stats }) => (
-                <li key={group.groupId}>
-                  {confirmDelete === group.groupId ? (
-                    <DeleteConfirm
-                      group={group}
-                      onCancel={() => setConfirmDelete(null)}
-                      onConfirm={() => {
-                        setConfirmDelete(null);
-                        void removeGroup(group.groupId);
-                      }}
-                    />
-                  ) : (
-                    <GroupCard
-                      group={group}
-                      stats={stats}
-                      onOpen={() => open(group.groupId)}
-                      onDelete={() => setConfirmDelete(group.groupId)}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-3">
+              <SelectionBar
+                sel={sel}
+                className="no-print"
+                noun={{ one: 'group', other: 'groups' }}
+                confirm={confirmBulkDelete}
+                onDelete={deleteGroups}
+              />
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {rows.map(({ group, stats }) => (
+                  <li key={group.groupId}>
+                    {confirmDelete === group.groupId ? (
+                      <DeleteConfirm
+                        group={group}
+                        onCancel={() => setConfirmDelete(null)}
+                        onConfirm={() => {
+                          setConfirmDelete(null);
+                          void removeGroup(group.groupId);
+                        }}
+                      />
+                    ) : (
+                      <GroupCard
+                        group={group}
+                        stats={stats}
+                        sel={sel}
+                        onOpen={() => open(group.groupId)}
+                        onDelete={() => setConfirmDelete(group.groupId)}
+                      />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
           {startPanel}
         </div>
@@ -212,11 +235,13 @@ export default function GroupList() {
 function GroupCard({
   group,
   stats,
+  sel,
   onOpen,
   onDelete,
 }: {
   group: StoredGroup;
   stats: GroupStats;
+  sel: ListSelection;
   onOpen: () => void;
   onDelete: () => void;
 }) {
@@ -230,7 +255,8 @@ function GroupCard({
         // A button centres its content vertically by default, so a card
         // stretched to match a taller neighbour in the row would float its
         // title down the middle. Flex column, top-aligned, pins it back.
-        className={`${card} flex h-full w-full flex-col items-stretch justify-start text-left transition hover:border-orange-300 dark:hover:border-orange-800`}
+        // pl-12: room on the left for the tick box sitting over that corner.
+        className={`${card} flex h-full w-full flex-col items-stretch justify-start !pl-12 text-left transition hover:border-orange-300 dark:hover:border-orange-800`}
       >
         {/* pr-8 keeps the title clear of the ✕ sitting over this corner. */}
         <div className="flex items-center justify-between gap-2 pr-8">
@@ -256,6 +282,13 @@ function GroupCard({
           </p>
         )}
       </button>
+      {/* A sibling of the card button, like the ✕: a tick box inside a button is invalid HTML. */}
+      <SelectCheckbox
+        className="no-print absolute left-4 top-[1.15rem] sm:left-5 sm:top-[1.4rem]"
+        checked={sel.has(group.groupId)}
+        onChange={() => sel.toggle(group.groupId)}
+        label={`Select ${group.name}`}
+      />
       <button
         type="button"
         onClick={onDelete}
@@ -266,6 +299,22 @@ function GroupCard({
         ✕
       </button>
     </div>
+  );
+}
+
+/**
+ * The question before deleting several groups: the same two sentences as one
+ * group's own confirmation, chosen by whether the groups sync.
+ */
+function bulkDeleteMessage(n: number, synced: number): string {
+  const head = `Delete ${n} ${n === 1 ? 'group' : 'groups'} from this device?`;
+  const syncedLine = 'The synced copy and everyone else’s copies are untouched — re-open the join link to get it back.';
+  const localLine = 'This copy is the only one, unless you have shared a link or saved the ledger file. It cannot be undone.';
+  if (synced === n) return `${head} ${n === 1 ? syncedLine : 'They sync, so the synced copies and everyone else’s copies are untouched — re-open a join link to get one back.'}`;
+  if (synced === 0) return `${head} ${n === 1 ? localLine : 'These copies are the only ones, unless you have shared a link or saved the ledger file. It cannot be undone.'}`;
+  return (
+    `${head} ${synced} of them ${synced === 1 ? 'syncs' : 'sync'}: ${synced === 1 ? 'its' : 'their'} synced ${synced === 1 ? 'copy and everyone else’s copies are' : 'copies and everyone else’s are'} untouched — re-open the join link to get ${synced === 1 ? 'it' : 'one'} back. ` +
+    `For the ${n - synced === 1 ? 'other one' : `other ${n - synced}`}, this device has the only copy unless you have shared a link or saved the ledger file, and that cannot be undone.`
   );
 }
 

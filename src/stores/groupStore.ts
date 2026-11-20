@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import {
-  eventTimestamp, findDuplicateSuspicions, mergeEvents, randomEventId, randomGroupId,
+  eventTimestamp, findDuplicateSuspicions, mergeEvents, randomEventId, randomGroupId, voidEvents,
   type DuplicateSuspicion, type EventId, type ExpenseEvent, type LedgerEvent, type MemberEvent, type MemberHandles, type PaymentEvent, type SplitSpec,
 } from '../lib/events';
 import { buildCompact, pruneCompacted } from '../lib/compact';
@@ -41,6 +41,8 @@ interface GroupState {
   addPayments: (fields: PaymentFields[]) => Promise<void>;
   amendPayment: (originalId: EventId, fields: PaymentFields) => Promise<void>;
   voidEntry: (entryId: EventId) => Promise<void>;
+  /** Remove several entries as one append (one save, one sync) — the same voids as removing them one by one. */
+  voidEntries: (entryIds: EventId[]) => Promise<void>;
   compactBefore: (cutoffDate: string) => Promise<number>;
 
   addRecurring: (t: Omit<RecurringTemplate, 'id' | 'createdOn' | 'lastAdded'>) => Promise<void>;
@@ -228,10 +230,17 @@ export const useGroupStore = create<GroupState>((set, get) => {
     },
 
     voidEntry: async (entryId) => {
-      await append([{ kind: 'void', ...base(), supersedes: entryId }]);
+      await get().voidEntries([entryId]);
+    },
+
+    voidEntries: async (entryIds) => {
+      if (entryIds.length === 0) return;
+      // One append, so a synced group pushes every removal in one go (a sync
+      // already running would skip the later ones until the next poll).
+      await append(voidEvents(entryIds, base));
       // A removed entry's local receipt photo has nothing to attach to.
       const { activeId } = get();
-      if (activeId) void deletePhoto(activeId, entryId);
+      if (activeId) for (const id of entryIds) void deletePhoto(activeId, id);
     },
 
     addRecurring: async (t) => {
