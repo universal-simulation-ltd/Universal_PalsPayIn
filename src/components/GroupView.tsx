@@ -149,7 +149,8 @@ export default function GroupView({ groupId }: { groupId: string }) {
             {tab === 'share' && <ShareView group={group} ledger={eff} />}
           </div>
 
-          <aside className="space-y-4 self-start lg:sticky lg:top-6">
+          {/* space-y-6: room for each box's key tab, which stands above its top edge. */}
+          <aside className="space-y-6 self-start lg:sticky lg:top-6">
             <GroupRail stats={stats} transfers={choice.plan.length} onSettle={() => setTab('settle')} />
           </aside>
         </div>

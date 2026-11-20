@@ -7,7 +7,7 @@ import { payOptions } from '../lib/paylinks';
 import type { SettleChoice, Transfer } from '../lib/settle';
 import { settlementMessage } from '../lib/summary';
 import PaymentForm from './PaymentForm';
-import { btnGhost, btnSoft, card, checkboxCls, CopyButton, MemberDot, ScrollFade } from './ui';
+import { btnGhost, btnSoft, card, checkboxCls, CopyButton, keyCard, MemberDot, ScrollFade } from './ui';
 
 export default function SettleView({
   ledger,
@@ -31,7 +31,8 @@ export default function SettleView({
   if (choice.plan.length === 0) {
     return (
       <div className="space-y-4">
-        <section className={card}>
+        <section className={keyCard}>
+          <h2 className="u-box__key">Settle up</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">All square — there is nothing to settle.</p>
         </section>
         {/* Worth sending too: "we're square" is the message that ends the thread. */}
@@ -56,9 +57,12 @@ export default function SettleView({
 
   return (
     <div className="space-y-4">
-      <section className={card}>
+      {/* The plan: a result computed from the balances, so the suite's Key box
+          (BRANDING.md → Boxes, C), its tab naming it. */}
+      <section className={keyCard}>
+        <h2 className="u-box__key">Settle up</h2>
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{headline}</h2>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{headline}</h3>
           {choice.usedConstrained && choice.plan.length > choice.unconstrainedCount && (
             <button
               type="button"

@@ -9,7 +9,7 @@
 import type { ReactNode } from 'react';
 import { formatAmount } from '../lib/money';
 import type { CurrencyTotal, GroupStats, PortfolioStats } from '../lib/stats';
-import { card } from './ui';
+import { emptyFrame, keyCard } from './ui';
 
 /** yyyy-mm-dd → "1 Aug 2026", parsed as calendar parts so a timezone west of
  *  UTC cannot roll the date back a day. */
@@ -19,11 +19,16 @@ function shortDate(iso: string): string {
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function RailCard({ title, children, className = '' }: { title: string; children: ReactNode; className?: string }) {
+/**
+ * A summary: figures read from the ledger, so the suite's Key box
+ * (BRANDING.md → Boxes, C), its tab naming the figures. The tab stays
+ * neutral; "still owed" and "all square" keep their colours in the figures.
+ */
+function RailCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className={`${card} ${className}`}>
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</h2>
-      <div className="mt-3">{children}</div>
+    <section className={keyCard}>
+      <h2 className="u-box__key">{title}</h2>
+      {children}
     </section>
   );
 }
@@ -111,9 +116,12 @@ function FoldedNote() {
  * not your data" signal the example-group banner uses.
  */
 export function EmptyRail() {
+  // Nothing to add up yet: the Viewfinder with nothing in frame (BRANDING.md
+  // → Boxes, D · empty), all four corners muted, in place of the dashed border.
   return (
-    <RailCard title="Across every group" className="border-dashed">
-      <dl className="grid grid-cols-2 gap-3 opacity-45">
+    <section className={`${emptyFrame} text-left`}>
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Across every group</h2>
+      <dl className="mt-3 grid grid-cols-2 gap-3 opacity-45">
         <Figure label="Groups" value="—" />
         <Figure label="Still to settle" value="—" />
         <Figure label="Total spent" value="—" />
@@ -123,7 +131,7 @@ export function EmptyRail() {
         Your running totals land here once there is something to add up: what has been spent, what is still owed between people,
         and which groups are not square yet — each currency on its own line.
       </p>
-    </RailCard>
+    </section>
   );
 }
 
@@ -196,11 +204,13 @@ export function GroupRail({
           </div>
         </RailCard>
       ) : (
-        <RailCard title="The money">
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+        // No money yet: an empty Viewfinder (Boxes, D · empty), as EmptyRail.
+        <section className={`${emptyFrame} text-left`}>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">The money</h2>
+          <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
             Nothing logged yet. Add an expense and the totals appear here.
           </p>
-        </RailCard>
+        </section>
       )}
 
       {entries > 0 && (

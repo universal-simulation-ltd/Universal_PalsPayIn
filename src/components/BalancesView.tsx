@@ -1,7 +1,7 @@
 import type { BalancesResult, PairwiseDebt } from '../lib/balances';
 import type { EffectiveLedger, EventId } from '../lib/events';
 import { formatAmount } from '../lib/money';
-import { card, MemberDot } from './ui';
+import { keyCard, MemberDot } from './ui';
 
 export default function BalancesView({
   ledger,
@@ -16,16 +16,20 @@ export default function BalancesView({
   const colourOf = (id: EventId) => ledger.members.find((m) => m.id === id)?.colour ?? '#999';
   const currencies = [...bal.nets.keys()].sort();
 
+  // Each panel is a record read from the ledger: the suite's Key box
+  // (BRANDING.md → Boxes, C), its tab saying what it is. The tab stays
+  // neutral; owing and owed keep their colours in the words.
   if (currencies.length === 0) {
     return (
-      <section className={card}>
+      <section className={keyCard}>
+        <h2 className="u-box__key">Balances</h2>
         <p className="text-sm text-slate-600 dark:text-slate-400">All square — nobody owes anybody anything.</p>
       </section>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {currencies.length > 1 && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Balances are kept per currency, deliberately. Netting €40 against £15 would need an exchange rate, and asserting one would
@@ -36,8 +40,8 @@ export default function BalancesView({
         const nets = [...bal.nets.get(currency)!.entries()].sort((a, b) => b[1] - a[1]);
         const max = Math.max(...nets.map(([, v]) => Math.abs(v)), 1);
         return (
-          <section key={currency} className={card}>
-            <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{currency}</h2>
+          <section key={currency} className={keyCard}>
+            <h2 className="u-box__key">Balances · {currency}</h2>
             <ul className="space-y-2">
               {nets.map(([member, net]) => (
                 <li key={member} className="grid grid-cols-[minmax(0,5rem)_1fr_auto] items-center gap-2 text-sm sm:grid-cols-[8rem_1fr_auto]">
@@ -62,8 +66,8 @@ export default function BalancesView({
         );
       })}
 
-      <section className={card}>
-        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Who owes whom, directly</h2>
+      <section className={keyCard}>
+        <h2 className="u-box__key">Who owes whom, directly</h2>
         <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
           Straight from the expenses as recorded — no simplification. The Settle up tab shows the shortest way out; this is the raw
           truth it is a view of.

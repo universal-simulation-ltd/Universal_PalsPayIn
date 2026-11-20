@@ -57,6 +57,18 @@ export const inputCls =
   'w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
 export const selectCls =
   'min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
+/**
+ * The suite's box marks (BRANDING.md → Boxes), on the card's border, fill and
+ * shadow. Orbit (A): a card you tap to open something (a group). Key (C): a
+ * record carrying values, its `.u-box__key` tab naming it (the totals, the
+ * balances, who owes whom). Each draws its own corners, so neither carries the
+ * card's `rounded-2xl`.
+ */
+const boxSkin = 'border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900';
+export const orbitCard = `u-box u-box--orbit ${boxSkin} p-4 sm:p-5`;
+export const keyCard = `u-box u-box--key ${boxSkin} px-4 pb-4 pt-6 sm:px-5 sm:pb-5`;
+/** Nothing here yet: the Viewfinder with nothing in frame (Boxes, D · empty), all four corners muted. */
+export const emptyFrame = 'u-box u-box--frame u-box--empty bg-white p-4 sm:p-5 dark:bg-slate-900';
 export const card = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-900';
 export const label = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400';
 

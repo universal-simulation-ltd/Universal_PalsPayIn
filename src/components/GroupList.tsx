@@ -7,7 +7,7 @@ import { formatAmount } from '../lib/money';
 import { groupStats, portfolioStats, type GroupStats } from '../lib/stats';
 import type { StoredGroup } from '../lib/store';
 import { EmptyRail, PortfolioRail } from './StatsRail';
-import { BinIcon, btnDanger, btnGhost, btnPrimary, btnQuiet, card, inputCls, Key, label, PlusIcon, UploadIcon } from './ui';
+import { BinIcon, btnDanger, btnGhost, btnPrimary, btnQuiet, card, inputCls, Key, label, orbitCard, PlusIcon, UploadIcon } from './ui';
 
 export default function GroupList() {
   const groups = useGroupStore((s) => s.groups);
@@ -217,7 +217,8 @@ export default function GroupList() {
           {startPanel}
         </div>
 
-        <aside className="space-y-4 self-start lg:sticky lg:top-6">
+        {/* space-y-6: room for each box's key tab, which stands above its top edge. */}
+        <aside className="space-y-6 self-start lg:sticky lg:top-6">
           {rows.length === 0 ? <EmptyRail /> : <PortfolioRail stats={portfolio} />}
         </aside>
       </div>
@@ -256,7 +257,9 @@ function GroupCard({
         // stretched to match a taller neighbour in the row would float its
         // title down the middle. Flex column, top-aligned, pins it back.
         // pl-12: room on the left for the tick box sitting over that corner.
-        className={`${card} flex h-full w-full flex-col items-stretch justify-start !pl-12 text-left transition hover:border-orange-300 dark:hover:border-orange-800`}
+        // A card you tap to open the group: the suite's Orbit corner
+        // (BRANDING.md → Boxes, A), its arc sweeping further round on hover.
+        className={`${orbitCard} flex h-full w-full flex-col items-stretch justify-start !pl-12 text-left`}
       >
         {/* pr-8 keeps the title clear of the ✕ sitting over this corner. */}
         <div className="flex items-center justify-between gap-2 pr-8">

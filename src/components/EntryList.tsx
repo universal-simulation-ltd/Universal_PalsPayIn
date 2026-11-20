@@ -7,7 +7,7 @@ import { computeShares } from '../lib/split';
 import { useGroupStore } from '../stores/groupStore';
 import ExpenseForm from './ExpenseForm';
 import PaymentForm from './PaymentForm';
-import { card, MemberDot } from './ui';
+import { card, emptyFrame, keyCard, MemberDot } from './ui';
 
 export default function EntryList({ group, ledger }: { group: StoredGroup; ledger: EffectiveLedger }) {
   const voidEntry = useGroupStore((s) => s.voidEntry);
@@ -39,7 +39,9 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
 
   if (entries.length === 0 && ledger.opening.length === 0) {
     return (
-      <section className={card}>
+      // Nothing logged yet: the Viewfinder with nothing in frame (BRANDING.md →
+      // Boxes, D · empty), all four corners muted.
+      <section className={emptyFrame}>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Nothing here yet. Add the first expense — the taxi, the shopping, the thing somebody definitely paid for.
         </p>
@@ -180,9 +182,12 @@ export default function EntryList({ group, ledger }: { group: StoredGroup; ledge
       })}
 
       {ledger.opening.length > 0 && (
-        <article className={`${card} !p-4`}>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Opening balances</h3>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+        // The folded-up history's net effect: a record carrying values, so the
+        // suite's Key box (BRANDING.md → Boxes, C), its tab naming it. mt-4
+        // clears the tab from the entry above.
+        <article className={`${keyCard} mt-4`}>
+          <h3 className="u-box__key">Opening balances</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Older history was folded up to keep the share link small. These carry its net effect exactly.
           </p>
           <ul className="mt-2 grid gap-1 text-xs text-slate-600 sm:grid-cols-2 dark:text-slate-300">
