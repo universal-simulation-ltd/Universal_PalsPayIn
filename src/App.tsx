@@ -52,6 +52,10 @@ export default function App() {
       <UniversalAppsNavBar
         // Signed in, the bar says whose it is: "Bradley’s PalsPayIn" ("James’ PalsPayIn",
         // "My PalsPayIn" with no name), and Tune this app gets the account area (James, 2026-11-10 rollout).
+        // The account box is Tune this app ▸ Your Universal ID (Call me, App name — "Your …" or the
+        // product's own name — email, the hub, Sign out), as BlackBook and PDF; no greeting in the bar
+        // (James, 2026-10-30: "make this style the global rule").
+        accountInTune
         personalTitle={(name) => (name ? `${/s$/i.test(name.trim()) ? `${name}’` : `${name}’s`} PalsPayIn` : 'My PalsPayIn')}
         contentClassName={CONTAINER}
         product="palspayin"
